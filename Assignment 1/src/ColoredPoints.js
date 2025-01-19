@@ -56,12 +56,28 @@ function connectVariablesToGLSL() {
   }
 }
 
+let g_selectedColor = [1.0,1.0,1.0,1.0];
+
+// Set up actions for the HTML UI elements (how to deal with the buttons)
+function addActionsForHtmlUI() {
+  // Button Events (Shape Type)
+  document.getElementById('green').onclick = function() { g_selectedColor = [0.0, 1.0, 0.0, 1.0]; };
+  document.getElementById('red').onclick = function() { g_selectedColor = [1.0, 0.0, 0.0, 1.0]; };
+
+  // Slider Events
+  document.getElementById('redSlide').addEventListener('mouseup', function() { g_selectedColor[0] = this.value / 100; });
+  document.getElementById('greenSlide').addEventListener('mouseup', function() { g_selectedColor[1] = this.value / 100; });
+  document.getElementById('blueSlide').addEventListener('mouseup', function() { g_selectedColor[2] = this.value / 100; });
+}
+
 function main() {
 
   // Set up canvas and gl variables
   setupWebGL();
   // Set up GLSL shader programs and connect GLSL variables
   connectVariablesToGLSL();
+  
+  addActionsForHtmlUI();
 
   // Register function (event handler) to be called on a mouse press
   canvas.onmousedown = click;
@@ -84,13 +100,27 @@ function click(ev) {
   // Store the coordinates to g_points array
   g_points.push([x, y]);
   // Store the coordinates to g_points array
-  if (x >= 0.0 && y >= 0.0) {      // First quadrant
-    g_colors.push([1.0, 0.0, 0.0, 1.0]);  // Red
-  } else if (x < 0.0 && y < 0.0) { // Third quadrant
-    g_colors.push([0.0, 1.0, 0.0, 1.0]);  // Green
-  } else {                         // Others
-    g_colors.push([1.0, 1.0, 1.0, 1.0]);  // White
-  }
+  // this code figures out which quadrant is for which color
+  // if (x >= 0.0 && y >= 0.0) {      // First quadrant
+  //   g_colors.push([1.0, 0.0, 0.0, 1.0]);  // Red
+  // } else if (x < 0.0 && y < 0.0) { // Third quadrant
+  //   g_colors.push([0.0, 1.0, 0.0, 1.0]);  // Green
+  // } else {                         // Others
+  //   g_colors.push([1.0, 1.0, 1.0, 1.0]);  // White
+  // }
+
+  // replace the above with the below
+  // Store the color to g_colors array
+  // this pushes whatever current color we've selected
+  // g_colors.push(g_selectedColor);
+  // bug with above line: every time a diff color is selected on the slider, both the old points and the newly pushed point all change color to the new color
+  // reason: the copying of arrays (g_selectedColor) is copied by a pointer. so when we push g_selectedColor, we are pushing a POINTER/reference to the selected color. so later when we change the selected color, all the pointers in the list we're creating all change together. 
+  // solution: instead, we want to make a copy of all the elements in the array and make it.
+  // solution 1:
+  g_colors.push(g_selectedColor.slice()); // forces a copy of all the elements in the array
+
+  // solution 2:
+  // g_colors.push([g_selectedColor[0], g_selectedColor[1], g_selectedColor[2], g_selectedColor[3]]); // copy all the elements separately (b/c if we copy a float value, that copies by value). we're extracting the 1st 4 elements and constructing a new array with those 4 elements, then pushing that.
 
   // Draw every shape that is supposed to be in the canvas
   renderAllShapes();

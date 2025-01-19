@@ -1,0 +1,64 @@
+<!-- Shantelle Toh -->
+<!-- shtoh@ucsc.edu -->
+
+<!-- Notes to grader: thanks for grading my work! -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Draw a point (1)</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+    <br>
+
+    <label>v1: x</label>
+    <input id="x1" type="text">
+
+    <label>y</label>
+    <input id="y1" type="text">
+
+    <br>
+
+    <label>v2: x</label>
+    <input id="x2" type="text">
+
+    <label>y</label>
+    <input id="y2" type="text">
+
+    <br>
+
+    <input id="submit1" type="button" value="Draw" onClick="handleDrawEvent()">
+
+    <br>
+    <br>
+
+
+    <label>Operation: </label>
+    <select id="operation">
+      <option value="Add">Add</option>
+      <option value="Subtract">Subtract</option>
+      <option value="Multiply">Multiply</option>
+      <option value="Divide">Divide</option>
+      <option value="Magnitude">Magnitude</option>
+      <option value="Normalize">Normalize</option>
+      <option value="Angle">Angle Between</option>
+      <option value="Area">Area</option>
+    </select>
+
+    <label>Scalar: </label>
+    <input type="text" id="scalar">
+
+    <br>
+
+    <input id="submit2" type="button" value="Draw" onClick="handleDrawOperationEvent()">
+
+    <script src="../lib/cuon-matrix-cse160.js"></script>
+    <script src="asg0.js"></script>
+  </body>
+</html>

@@ -103,17 +103,26 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-var g_points = [];  // The array for the position of a mouse press
-var g_colors = [];  // The array to store the color of a point
-var g_sizes = []; // the array to store the size of a point
+var g_shapesList = []; // list of points
+
+// var g_points = [];  // The array for the position of a mouse press
+// var g_colors = [];  // The array to store the color of a point
+// var g_sizes = []; // the array to store the size of a point
 
 function click(ev) {
 
   // Extract the event click and return it in WebGL coordinates
   let [x, y] = convertCoordinatesEventToGL(ev);
 
+  // Create and store the new point
+  let point = new Point();
+  point.position = [x, y];
+  point.color = g_selectedColor.slice();
+  point.size = g_selectedSize;
+  g_shapesList.push(point);
+
   // Store the coordinates to g_points array
-  g_points.push([x, y]);
+  // g_points.push([x, y]);
   // Store the coordinates to g_points array
   // this code figures out which quadrant is for which color
   // if (x >= 0.0 && y >= 0.0) {      // First quadrant
@@ -132,12 +141,12 @@ function click(ev) {
   // reason: the copying of arrays (g_selectedColor) is copied by a pointer. so when we push g_selectedColor, we are pushing a POINTER/reference to the selected color. so later when we change the selected color, all the pointers in the list we're creating all change together. 
   // solution: instead, we want to make a copy of all the elements in the array and make it.
   // solution 1:
-  g_colors.push(g_selectedColor.slice()); // forces a copy of all the elements in the array
+  // g_colors.push(g_selectedColor.slice()); // forces a copy of all the elements in the array
 
   // solution 2:
   // g_colors.push([g_selectedColor[0], g_selectedColor[1], g_selectedColor[2], g_selectedColor[3]]); // copy all the elements separately (b/c if we copy a float value, that copies by value). we're extracting the 1st 4 elements and constructing a new array with those 4 elements, then pushing that.
 
-  g_sizes.push(g_selectedSize);
+  // g_sizes.push(g_selectedSize);
 
   // Draw every shape that is supposed to be in the canvas
   renderAllShapes();
@@ -160,21 +169,10 @@ function renderAllShapes() {
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  var len = g_points.length;
-  for(var i = 0; i < len; i++) {
-    var xy = g_points[i];
-    var rgba = g_colors[i];
-    var size = g_sizes[i];
+  // var len = g_points.length; // no guarantee that the g_points list is the same length as the colors or size list
+  var len = g_shapesList.length;
 
-    // Pass the position of a point to a_Position variable
-    gl.vertexAttrib3f(a_Position, xy[0], xy[1], 0.0);
-    // Pass the color of a point to u_FragColor variable
-    gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]); // 4f means 4 floating point vals
-    
-    // Pass the size of a point to a u_Size variable
-    gl.uniform1f(u_Size, size); // just 1 floating point val bc that's the size we've defined
-    
-    // Draw
-    gl.drawArrays(gl.POINTS, 0, 1);
+  for(var i = 0; i < len; i++) {
+    g_shapesList[i].render();
   }
 }

@@ -29,12 +29,12 @@ function main() {
     return;
   }
 
-  // Write the positions of vertices to a vertex shader
-  var n = initVertexBuffers(gl);
-  if (n < 0) {
-    console.log('Failed to set the positions of the vertices');
-    return;
-  }
+//   // Write the positions of vertices to a vertex shader
+//   var n = initVertexBuffers(gl);
+//   if (n < 0) {
+//     console.log('Failed to set the positions of the vertices');
+//     return;
+//   }
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0, 0, 0, 1);
@@ -43,14 +43,18 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   // Draw the rectangle
-  gl.drawArrays(gl.TRIANGLES, 0, n); // n = # vertices to draw
+//   gl.drawArrays(gl.TRIANGLES, 0, n); // n = # vertices to draw
+  drawTriangle(gl, [0, 0.5,   -0.5, -0.5,   0.5, -0.5]);
+  drawTriangle(gl, [0.8, 0.9,   0.7, 0.8,   0.8, 0.7]);
+  drawTriangle(gl, [0.0, 0.0,   0.5, 0,   0.5, 0.5]);
 }
 
-function initVertexBuffers(gl) {
-  var vertices = new Float32Array([ // declare vertices at this location. this is in JS on the cpu.
-    // Float32Array tells JS we want it to be precisely floats with 32 bits bc that's the kind we want to pass to GLSL
-    0, 0.5,   -0.5, -0.5,   0.5, -0.5
-  ]);
+// function that draws a triangle at the position we want it to draw
+function drawTriangle(gl, vertices) { // video didnt do this but i added gl as a param otherwise it's not in scope
+//   var vertices = new Float32Array([ // declare vertices at this location. this is in JS on the cpu.
+//     // Float32Array tells JS we want it to be precisely floats with 32 bits bc that's the kind we want to pass to GLSL
+//     0, 0.5,   -0.5, -0.5,   0.5, -0.5
+//   ]);
   var n = 3; // The number of vertices
 
   // Create a buffer object
@@ -65,7 +69,8 @@ function initVertexBuffers(gl) {
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   // Write data into the buffer object
   // sends the data we defined (the vertices array) to live in a buffer array on the gpu
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+//   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
 
   // connect it to a_Position (so far buffer array isn't connected to anything)
   var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
@@ -82,6 +87,7 @@ function initVertexBuffers(gl) {
 
   // Enable the assignment to a_Position variable
   gl.enableVertexAttribArray(a_Position);
-
-  return n;
+  
+  gl.drawArrays(gl.TRIANGLES, 0, n);
+//   return n;
 }

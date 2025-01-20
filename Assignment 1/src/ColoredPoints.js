@@ -75,6 +75,7 @@ const CIRCLE = 2;
 let g_selectedColor = [1.0,1.0,1.0,1.0];
 let g_selectedSize = 5;
 let g_selectedType = POINT;
+let g_selectedNumSegments = 10;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
@@ -91,9 +92,10 @@ function addActionsForHtmlUI() {
   document.getElementById('redSlide').addEventListener('mouseup', function() { g_selectedColor[0] = this.value / 100; });
   document.getElementById('greenSlide').addEventListener('mouseup', function() { g_selectedColor[1] = this.value / 100; });
   document.getElementById('blueSlide').addEventListener('mouseup', function() { g_selectedColor[2] = this.value / 100; });
-
+  
   // Size Slider Events
   document.getElementById('sizeSlide').addEventListener('mouseup', function() { g_selectedSize = this.value; });
+  document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
 }
 
 function main() {
@@ -137,6 +139,7 @@ function click(ev) {
   }
   else {
     point = new Circle();
+    point.segments = g_selectedNumSegments;
   }
   point.position = [x, y];
   point.color = g_selectedColor.slice();

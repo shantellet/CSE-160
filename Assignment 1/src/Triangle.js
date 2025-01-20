@@ -23,8 +23,9 @@ class Triangle {
     gl.uniform1f(u_Size, size); // just 1 floating point val bc that's the size we've defined
     
     // Draw
+    var d = this.size/200.0; // delta for length of the sides
     // gl.drawArrays(gl.POINTS, 0, 1);
-    drawTriangle( [xy[0], xy[1], xy[0] + 0.1, xy[1], xy[0], xy[1] + 0.1] );
+    drawTriangle( [xy[0], xy[1], xy[0] + d, xy[1], xy[0], xy[1] + d] );
   }
     
 }
@@ -51,7 +52,11 @@ function drawTriangle(vertices) { // video didnt do this but i added gl as a par
   // Write data into the buffer object
   // sends the data we defined (the vertices array) to live in a buffer array on the gpu
 //   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
+  // bufferData is where we're sending the vertices to the GLSL (gpu)
+  // use STATIC to say we're going to keep using it
+  // use DYNAMIC to say that we keep on sending new buffer data -- create less lag
+  // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
 
   // connect it to a_Position (so far buffer array isn't connected to anything)
   // already in ColoredPoint.js so don't need it again
@@ -70,6 +75,7 @@ function drawTriangle(vertices) { // video didnt do this but i added gl as a par
   // Enable the assignment to a_Position variable
   gl.enableVertexAttribArray(a_Position);
   
-  gl.drawArrays(gl.TRIANGLES, 0, n);
+  gl.drawArrays(gl.TRIANGLES, 0, n); // passing 3 vertices into this buffer obj
+  // gl.drawArrays(gl.POINTS, 0, n); // this gives the 3 vertices as points every time we draw a triangle!
 //   return n;
 }

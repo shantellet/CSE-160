@@ -23,7 +23,8 @@ class Point {
     gl.uniform1f(u_Size, size); // just 1 floating point val bc that's the size we've defined
     
     // Draw
-    gl.drawArrays(gl.POINTS, 0, 1);
+    // gl.drawArrays(gl.POINTS, 0, 1);
+    // drawTriangle( [xy[0], xy[1], xy[0] + 0.1, xy[1], xy[0], xy[1] + 0.1] );
   }
     
 }

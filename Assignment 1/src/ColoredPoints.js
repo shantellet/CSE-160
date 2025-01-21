@@ -71,11 +71,15 @@ function connectVariablesToGLSL() {
 const POINT = 0;
 const TRIANGLE = 1;
 const CIRCLE = 2;
+const STAR = 3;
+const DRAWING = 4;
+const RANDOM = 5;
 
 let g_selectedColor = [1.0,1.0,1.0,1.0];
 let g_selectedSize = 5;
 let g_selectedType = POINT;
 let g_selectedNumSegments = 10;
+let g_selectedNumPoints = 5;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
@@ -87,6 +91,9 @@ function addActionsForHtmlUI() {
   document.getElementById('pointButton').onclick = function() { g_selectedType = POINT };
   document.getElementById('triButton').onclick = function() { g_selectedType = TRIANGLE };
   document.getElementById('circleButton').onclick = function() { g_selectedType = CIRCLE };
+  document.getElementById('starButton').onclick = function() { g_selectedType = STAR };
+  document.getElementById('pictureButton').onclick = function() { g_selectedType = DRAWING };
+  document.getElementById('randomButton').onclick = function() { g_selectedType = RANDOM };
 
   // Slider Events
   document.getElementById('redSlide').addEventListener('mouseup', function() { g_selectedColor[0] = this.value / 100; });
@@ -96,6 +103,82 @@ function addActionsForHtmlUI() {
   // Size Slider Events
   document.getElementById('sizeSlide').addEventListener('mouseup', function() { g_selectedSize = this.value; });
   document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
+  document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
+
+  document.getElementById('pictureButton').onclick = function() { drawPicture(); };
+}
+
+// draw a picture of a rabbit using triangles of random colors
+function drawPicture() {
+  // A = (-0.27, 0.324)
+  // B = (-0.374, 0.226)
+  // C = (-0.267, 0.128)
+  // D = (-0.12, 0.358)
+  // E = (-0.035, 0.674)
+  // F = (0.048, 0.742)
+  // G = (0.062, 0.638)
+  // H = (-0.096, 0.273)
+  // I = (0.2, 0.624)
+  // J = (-0.057, 0.165)
+  // K = (-0.221, -0.015)
+  // L = (0, 0.004)
+  // M = (0.323, 0.03)
+  // N = (-0.148, -0.116)
+  // O = (0.399, -0.176)
+  // P = (-0.141, -0.201)
+  // Q = (0.366, -0.398)
+  // R = (0.428, -0.283)
+  // S = (0.009, -0.133)
+  // T = (0.129, -0.282)
+  // U = (-0.176, -0.402)
+  // V = (-0.069, -0.358)
+  // W = (-0.18, -0.358)
+  // Z = (-0.25, -0.24)
+  // A_1 = (-0.207, -0.275)
+  // B_1 = (0.26, -0.232)
+  // the triangles compose of those points: 
+  // ABJ, ADJ, BCJ, CJK, DEH, EFG, EGH, GHI, JKL, JLM, KMN, MNO, NPS, NPZ, ORQ, OST, OQB_1, PST, PZA_1, QUB_1, UVW
+  // triangles in form of arrays with 6 elements made of the vertex coordinates, with commas separating the arrays
+      
+  // define triangle vertices
+  const triangles = [
+    [-0.27, 0.324, -0.374, 0.226, -0.057, 0.165], // ABJ
+    [-0.27, 0.324, -0.12, 0.358, -0.057, 0.165], // ADJ
+    [-0.374, 0.226, -0.267, 0.128, -0.057, 0.165], // BCJ
+    [-0.267, 0.128, -0.057, 0.165, -0.221, -0.015], // CJK
+    [-0.035, 0.674, -0.096, 0.273, -0.12, 0.358], // DEH
+    [-0.035, 0.674, 0.048, 0.742, 0.062, 0.638], // EFG
+    [-0.035, 0.674, 0.062, 0.638, -0.096, 0.273], // EGH
+    [0.062, 0.638, -0.096, 0.273, 0.2, 0.624], // GHI
+    [-0.057, 0.165, -0.221, -0.015, 0, 0.004], // JKL
+    [-0.057, 0.165, 0, 0.004, 0.323, 0.03], // JLM
+    [-0.221, -0.015, -0.148, -0.116, 0.323, 0.03], // KMN
+    [0.323, 0.03, 0.399, -0.176, -0.148, -0.116], // MNO
+    [-0.148, -0.116, -0.141, -0.201, 0.009, -0.133], // NPS
+    [-0.148, -0.116, -0.25, -0.24, -0.141, -0.201], // NPZ
+    [0.399, -0.176, 0.366, -0.398, 0.428, -0.283], // ORQ
+    [0.399, -0.176, 0.009, -0.133, 0.129, -0.282], // OST
+    [0.399, -0.176, 0.366, -0.398, 0.26, -0.232], // OQB_1
+    [-0.141, -0.201, 0.009, -0.133, 0.129, -0.282], // PST
+    [-0.141, -0.201, -0.25, -0.24, -0.207, -0.275], // PZA_1
+    [0.366, -0.398, -0.176, -0.402, 0.26, -0.232], // QUB_1
+    [-0.176, -0.402, -0.069, -0.358, -0.18, -0.358] // UVW
+  ];
+  
+  const size = 1.0; // filler size (just for shader so it works)
+  
+  gl.uniform1f(u_Size, size);
+
+  // 1 random color for the entire drawing
+  // const color = [Math.random(), Math.random(), Math.random(), 1.0];
+  // gl.uniform4f(u_FragColor, color[0], color[1], color[2], color[3]);
+  
+  // random color for each of the triangles
+  for (const triangle of triangles) {
+    const color = [Math.random(), Math.random(), Math.random(), 1.0];
+    gl.uniform4f(u_FragColor, color[0], color[1], color[2], color[3]);
+    drawTriangle(triangle);
+  }
 }
 
 function main() {
@@ -137,42 +220,53 @@ function click(ev) {
   else if (g_selectedType == TRIANGLE) {
     point = new Triangle();
   }
-  else {
+  else if (g_selectedType == CIRCLE) {
     point = new Circle();
     point.segments = g_selectedNumSegments;
+  }
+  // Awesomeness: create a new shape, star
+  else if (g_selectedType == STAR) {
+    point = new Star();
+    point.points = g_selectedNumPoints;
+  }
+  // Awesomeness: create a random shape
+  else if (g_selectedType == RANDOM) {
+    const shapes = [POINT, CIRCLE, TRIANGLE, STAR];
+    let choice = shapes[Math.floor(Math.random() * shapes.length)];
+    if (choice == POINT) {
+      point = new Point();
+    }
+    else if (choice == TRIANGLE) {
+      point = new Triangle();
+    }
+    else if (choice == CIRCLE) {
+      point = new Circle();
+      point.segments = g_selectedNumSegments;
+    }
+    else if (choice == STAR) {
+      point = new Star();
+      point.points = g_selectedNumPoints;
+    }
   }
   point.position = [x, y];
   point.color = g_selectedColor.slice();
   point.size = g_selectedSize;
+
+  // give the random shape random position, color, size, etc. as well
+  if (g_selectedType == RANDOM) {
+    point.position = [Math.random() * 2.0 - 1.0, Math.random() * 2.0 - 1.0]; // random nums between -1 and 1
+    point.color = [Math.random(), Math.random(), Math.random(), 1.0];
+    point.size = Math.random() * 35.0 + 5.0;
+    if (point.type == "circle") {
+      point.segments = Math.floor(Math.random() * 90 + 10);
+    }
+    else if (point.type == "star") {
+      point.points = Math.floor(Math.random() * 3 + 5);
+    }
+  }
+
   g_shapesList.push(point);
-
-  // Store the coordinates to g_points array
-  // g_points.push([x, y]);
-  // Store the coordinates to g_points array
-  // this code figures out which quadrant is for which color
-  // if (x >= 0.0 && y >= 0.0) {      // First quadrant
-  //   g_colors.push([1.0, 0.0, 0.0, 1.0]);  // Red
-  // } else if (x < 0.0 && y < 0.0) { // Third quadrant
-  //   g_colors.push([0.0, 1.0, 0.0, 1.0]);  // Green
-  // } else {                         // Others
-  //   g_colors.push([1.0, 1.0, 1.0, 1.0]);  // White
-  // }
-
-  // replace the above with the below
-  // Store the color to g_colors array
-  // this pushes whatever current color we've selected
-  // g_colors.push(g_selectedColor);
-  // bug with above line: every time a diff color is selected on the slider, both the old points and the newly pushed point all change color to the new color
-  // reason: the copying of arrays (g_selectedColor) is copied by a pointer. so when we push g_selectedColor, we are pushing a POINTER/reference to the selected color. so later when we change the selected color, all the pointers in the list we're creating all change together. 
-  // solution: instead, we want to make a copy of all the elements in the array and make it.
-  // solution 1:
-  // g_colors.push(g_selectedColor.slice()); // forces a copy of all the elements in the array
-
-  // solution 2:
-  // g_colors.push([g_selectedColor[0], g_selectedColor[1], g_selectedColor[2], g_selectedColor[3]]); // copy all the elements separately (b/c if we copy a float value, that copies by value). we're extracting the 1st 4 elements and constructing a new array with those 4 elements, then pushing that.
-
-  // g_sizes.push(g_selectedSize);
-
+  
   // Draw every shape that is supposed to be in the canvas
   renderAllShapes();
 }
@@ -204,7 +298,7 @@ function renderAllShapes() {
     g_shapesList[i].render();
   }
 
-  // Check th eitme at the end of the function, and show on web page
+  // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;
   sendTextToHTML("numdot: " + len + " ms: " + Math.floor(duration) + " fps: " + Math.floor(10000/duration)/10, "numdot");
 }

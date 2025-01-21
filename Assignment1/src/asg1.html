@@ -1,3 +1,10 @@
+<!-- Shantelle Toh -->
+<!-- shtoh@ucsc.edu -->
+<!-- Notes to grader:
+ Thanks for grading my assignment!
+ My drawing and awesomeness features are described in the live site.
+-->
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -23,9 +30,12 @@
     <button type="button" id="pointButton">Point</button>
     <button type="button" id="triButton">Triangle</button>
     <button type="button" id="circleButton">Circle</button>
+
+    <p></p>
+    <b>Awesomeness:</b>
     <button type="button" id="starButton">Star</button>
     <button type="button" id="randomButton">Random</button>
-    <p>
+    <p><br>
     <button type="button" id="pictureButton">Draw Picture</button>
 
     <p>
@@ -43,6 +53,22 @@
     
     <p>
     Size <input type="range" min="5" max="40" value="0" class="slider" id="sizeSlide">
+
+    <br>
+    <br>
+    <h3>Rabbit Drawing:</h3>
+    <img src="rabbitDrawing.jpg" height="350px"  alt="rabbit drawing">
+    <img src="rabbitGraphDrawing.png" height="350px" alt="rabbit graph drawing">
+
+    <br>
+    <br>
+    <h3>Awesomeness!</h3>
+    <p>I added 2 features:
+      <ol>
+        <li>A star shape that the user can use to paint with. I wanted to experiment more with geometry so I went for a star shape. And aren't stars nice?</li>
+        <li>Ability to paint random shapes with random sizes and colors. It's a good way to create some modern art.</li>
+      </ol>
+    </p>
     
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
@@ -51,6 +77,6 @@
     <script src="Circle.js"></script>
     <script src="Triangle.js"></script>
     <script src="Point.js"></script>
-    <script src="Asg1.js"></script>
+    <script src="asg1.js"></script>
   </body>
 </html>

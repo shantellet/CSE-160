@@ -25,10 +25,16 @@ class Cube {
       gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
 
       // Front of cube
-      drawTriangle3D( [0.0, 0.0, 0.0,  1.0, 1.0, 0.0,  1.0, 0.0, 0.0] );
-      drawTriangle3D( [0.0, 0.0, 0.0,  0.0, 1.0, 0.0,  1.0, 1.0, 0.0] );
+      drawTriangle3D( [0, 0, 0,  1, 1, 0,  1, 0, 0] );
+      drawTriangle3D( [0, 0, 0,  0, 1, 0,  1, 1, 0] );
 
-      // Other sides of the cube top, bottom, left, right, back
+      // Add fake Lighting (differnt amount of light bouncing off each surface). Pass the color of a point to u_FragColor uniform variable
+      gl.uniform4f(u_FragColor, rgba[0] * 0.9, rgba[1] * 0.9, rgba[2] * 0.9, rgba[3]);
+      // for more sides, they might multiply by a slightly diff num, like 0.8
+
+      // Top of cube
+      drawTriangle3D( [0, 1, 0,  0, 1, 1,  1, 1, 1] );
+      drawTriangle3D( [0, 1, 0,  1, 1, 1,  1, 1, 0] );
 
     }
       

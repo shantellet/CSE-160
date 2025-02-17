@@ -1,12 +1,13 @@
 // ColoredPoint.js (c) 2012 matsuda
 // Vertex shader program
 
-// add a matrix so we can use it to change where our cube shows up on the screen
+
 var VSHADER_SOURCE = `
   attribute vec4 a_Position;
-  uniform mat4 u_ModelMatrix;
+  uniform mat4 u_ModelMatrix; // add a matrix so we can use it to change where our cube shows up on the screen
+  uniform mat4 u_GlobalRotateMatrix; // add a slider that lets us rotate the animal around so we can it from all sides. eventually will be a camera action. simulating a camera
   void main() {
-    gl_Position = u_ModelMatrix * a_Position;
+    gl_Position = u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
   }`
 
 // Fragment shader program
@@ -65,6 +66,13 @@ function connectVariablesToGLSL() {
     console.log('Failed to get the storage location of u_FragColor');
     return;
   }
+  
+  // Get the storage location of u_GlobalRotateMatrix
+  u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
+  if (!u_GlobalRotateMatrix) {
+    console.log('Failed to get the storage location of u_FragColor');
+    return;
+  }
 
   // Set an initial value for this matrix to identity
   var identityM = new Matrix4();
@@ -84,6 +92,7 @@ let g_selectedSize = 5;
 let g_selectedType = POINT;
 let g_selectedNumSegments = 10;
 let g_selectedNumPoints = 5;
+let g_globalAngle = 0;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
@@ -108,6 +117,8 @@ function addActionsForHtmlUI() {
   document.getElementById('sizeSlide').addEventListener('mouseup', function() { g_selectedSize = this.value; });
   document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
   document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
+
+  document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderAllShapes(); });
 
   document.getElementById('pictureButton').onclick = function() { drawPicture(); };
 }
@@ -295,6 +306,11 @@ function renderAllShapes() {
 
   // Check the time at the start of this function
   var startTime = performance.now();
+
+  // Pass the matrix to u_ModelMatrix attribute
+  var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
+  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements); // pass elements to the matrix
+
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -306,7 +322,7 @@ function renderAllShapes() {
   // }
 
   // Draw a test triangle
-  drawTriangle3D( [-1.0, 0.0, 0.0,  -0.5, -1.0, 0.0,  0.0, 0.0, 0.0] );
+  // drawTriangle3D( [-1.0, 0.0, 0.0,  -0.5, -1.0, 0.0,  0.0, 0.0, 0.0] );
   
   // Draw the body cube
   // didnt define a cube function (u could do that) (instead using a class cube here)
@@ -324,6 +340,14 @@ function renderAllShapes() {
   leftArm.matrix.rotate(45, 0, 0, 1);
   leftArm.matrix.scale(0.25, 0.7, 0.5);
   leftArm.render();
+
+  // Tet box
+  var box = new Cube();
+  box.color = [1, 0, 1, 1];
+  box.matrix.translate(0, 0, -0.5, 0);
+  box.matrix.rotate(-30, 1, 0, 0);
+  box.matrix.scale(0.5, 0.5, 0.5);
+  box.render();
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;

@@ -97,6 +97,7 @@ let g_selectedType = POINT;
 let g_selectedNumSegments = 10;
 let g_selectedNumPoints = 5;
 let g_globalAngle = 0;
+let g_yellowAngle = 0
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
@@ -122,6 +123,7 @@ function addActionsForHtmlUI() {
   document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
   document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
 
+  document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
   document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderScene(); });
 
   document.getElementById('pictureButton').onclick = function() { drawPicture(); };
@@ -345,7 +347,7 @@ function renderScene() {
   leftArm.color = [1, 1, 0, 1];
   leftArm.matrix.translate(0, -0.5, 0.0);
   leftArm.matrix.rotate(-5, 1, 0, 0);
-  leftArm.matrix.rotate(0, 0, 0, 1);
+  leftArm.matrix.rotate(-g_yellowAngle, 0, 0, 1);
   leftArm.matrix.scale(0.25, 0.7, 0.5);
   leftArm.matrix.translate(-0.5, 0, 0);
   leftArm.render();

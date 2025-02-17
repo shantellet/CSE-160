@@ -198,7 +198,10 @@ function main() {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
   // Clear <canvas>
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Render
+  renderAllShapes(); // instead of clearing the canvas and waiting for a click, now going to render all shapes at the end of the canvas
 }
 
 var g_shapesList = []; // list of points
@@ -292,15 +295,24 @@ function renderAllShapes() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   // var len = g_points.length; // no guarantee that the g_points list is the same length as the colors or size list
-  var len = g_shapesList.length;
+  // var len = g_shapesList.length;
 
-  for(var i = 0; i < len; i++) {
-    g_shapesList[i].render();
-  }
+  // for(var i = 0; i < len; i++) {
+  //   g_shapesList[i].render();
+  // }
+
+  // Draw a test triangle
+  drawTriangle3D( [-1.0, 0.0, 0.0,  -0.5, -1.0, 0.0,  0.0, 0.0, 0.0] );
+  
+  // Draw a cube
+  // didnt define a cube function (u could do that) (instead using a class cube here)
+  var body = new Cube(); // body of animal
+  body.color = [1.0, 0.0, 0.0, 1.0];
+  body.render();
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;
-  sendTextToHTML("numdot: " + len + " ms: " + Math.floor(duration) + " fps: " + Math.floor(10000/duration)/10, "numdot");
+  sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000/duration)/10, "numdot");
 }
 
 // Set the text of a HTML element

@@ -98,6 +98,7 @@ let g_selectedNumSegments = 10;
 let g_selectedNumPoints = 5;
 let g_globalAngle = 0;
 let g_yellowAngle = 0
+let g_magentaAngle = 0;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
@@ -123,6 +124,7 @@ function addActionsForHtmlUI() {
   document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
   document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
 
+  document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderScene(); });
   document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
   document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderScene(); });
 
@@ -348,6 +350,7 @@ function renderScene() {
   leftArm.matrix.translate(0, -0.5, 0.0);
   leftArm.matrix.rotate(-5, 1, 0, 0);
   leftArm.matrix.rotate(-g_yellowAngle, 0, 0, 1);
+  var yellowCoordinatesMat = new Matrix4(leftArm.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   leftArm.matrix.scale(0.25, 0.7, 0.5);
   leftArm.matrix.translate(-0.5, 0, 0);
   leftArm.render();
@@ -355,9 +358,11 @@ function renderScene() {
   // Test box
   var box = new Cube();
   box.color = [1, 0, 1, 1];
-  box.matrix.translate(-0.1, 0.1, 0, 0);
-  box.matrix.rotate(-30, 1, 0, 0);
-  box.matrix.scale(0.2, 0.4, 0.2);
+  box.matrix = yellowCoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
+  box.matrix.translate(0, 0.65, 0);
+  box.matrix.rotate(g_magentaAngle, 0, 0, 1);
+  box.matrix.scale(0.3, 0.3, 0.3);
+  box.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   box.render();
 
   // Check the time at the end of the function, and show on web page

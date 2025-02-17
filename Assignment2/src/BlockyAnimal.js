@@ -1,12 +1,12 @@
 // ColoredPoint.js (c) 2012 matsuda
 // Vertex shader program
+
+// add a matrix so we can use it to change where our cube shows up on the screen
 var VSHADER_SOURCE = `
   attribute vec4 a_Position;
-  uniform float u_Size; // uniform allows us to pass the info from JS into the shader
+  uniform mat4 u_ModelMatrix;
   void main() {
-    gl_Position = a_Position;
-    gl_PointSize = 10.0;
-    gl_PointSize = u_Size; // use this u_Size that we've passed in. gl_PointSize is a keyword which tells the GL rendering sys what to do
+    gl_Position = u_ModelMatrix * a_Position;
   }`
 
 // Fragment shader program
@@ -59,12 +59,16 @@ function connectVariablesToGLSL() {
     return;
   }
   
-  // Get the storage location of uSize
-  u_Size = gl.getUniformLocation(gl.program, 'u_Size');
-  if (!u_Size) {
-    console.log('Failed to get the storage location of u_Size');
+  // Get the storage location of u_ModelMatrix
+  u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
+  if (!u_ModelMatrix) {
+    console.log('Failed to get the storage location of u_FragColor');
     return;
   }
+
+  // Set an initial value for this matrix to identity
+  var identityM = new Matrix4();
+  gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
 }
 
 // Constants
@@ -304,11 +308,22 @@ function renderAllShapes() {
   // Draw a test triangle
   drawTriangle3D( [-1.0, 0.0, 0.0,  -0.5, -1.0, 0.0,  0.0, 0.0, 0.0] );
   
-  // Draw a cube
+  // Draw the body cube
   // didnt define a cube function (u could do that) (instead using a class cube here)
   var body = new Cube(); // body of animal
   body.color = [1.0, 0.0, 0.0, 1.0];
+  body.matrix.setTranslate(-0.25, -0.5, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
+  body.matrix.scale(0.5, 1, 0.5);
+  // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
   body.render();
+
+  // Draw a left arm
+  var leftArm = new Cube();
+  leftArm.color = [1, 1, 0, 1];
+  leftArm.matrix.translate(0.7, 0, 0.0);
+  leftArm.matrix.rotate(45, 0, 0, 1);
+  leftArm.matrix.scale(0.25, 0.7, 0.5);
+  leftArm.render();
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;

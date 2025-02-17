@@ -25,6 +25,8 @@ let gl;
 let a_Position;
 let u_FragColor;
 let u_Size;
+let u_ModelMatrix;
+let u_GlobalRotateMatrix;
 
 function setupWebGL() {
   // Retrieve <canvas> element
@@ -37,6 +39,8 @@ function setupWebGL() {
     console.log('Failed to get the rendering context for WebGL');
     return;
   }
+
+  gl.enable(gl.DEPTH_TEST); // depth buffer keeps track of what is in front of something else. takes care of the "transparency bug" the cube sides
 }
 
 function connectVariablesToGLSL() {
@@ -99,7 +103,7 @@ function addActionsForHtmlUI() {
   // Button Events (Shape Type)
   document.getElementById('green').onclick = function() { g_selectedColor = [0.0, 1.0, 0.0, 1.0]; };
   document.getElementById('red').onclick = function() { g_selectedColor = [1.0, 0.0, 0.0, 1.0]; };
-  document.getElementById('clearButton').onclick = function() { g_shapesList = []; renderAllShapes(); }; // clear g_shapesList
+  document.getElementById('clearButton').onclick = function() { g_shapesList = []; renderScene(); }; // clear g_shapesList
 
   document.getElementById('pointButton').onclick = function() { g_selectedType = POINT };
   document.getElementById('triButton').onclick = function() { g_selectedType = TRIANGLE };
@@ -118,7 +122,7 @@ function addActionsForHtmlUI() {
   document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
   document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
 
-  document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderAllShapes(); });
+  document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderScene(); });
 
   document.getElementById('pictureButton').onclick = function() { drawPicture(); };
 }
@@ -216,7 +220,7 @@ function main() {
   // gl.clear(gl.COLOR_BUFFER_BIT);
 
   // Render
-  renderAllShapes(); // instead of clearing the canvas and waiting for a click, now going to render all shapes at the end of the canvas
+  renderScene(); // instead of clearing the canvas and waiting for a click, now going to render all shapes at the end of the canvas
 }
 
 var g_shapesList = []; // list of points
@@ -286,7 +290,7 @@ function click(ev) {
   g_shapesList.push(point);
   
   // Draw every shape that is supposed to be in the canvas
-  renderAllShapes();
+  renderScene();
 }
 
 // Extract the event click adn return it in WebGL coordinates
@@ -302,7 +306,7 @@ function convertCoordinatesEventToGL(ev) {
 }
 
 // Draw every shape that is supposed to be in the canvas
-function renderAllShapes() {
+function renderScene() {
 
   // Check the time at the start of this function
   var startTime = performance.now();
@@ -312,6 +316,8 @@ function renderAllShapes() {
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements); // pass elements to the matrix
 
   // Clear <canvas>
+  // clear the DEPTH_BUFFER when you clear your screen
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   // var len = g_points.length; // no guarantee that the g_points list is the same length as the colors or size list
@@ -328,25 +334,28 @@ function renderAllShapes() {
   // didnt define a cube function (u could do that) (instead using a class cube here)
   var body = new Cube(); // body of animal
   body.color = [1.0, 0.0, 0.0, 1.0];
-  body.matrix.setTranslate(-0.25, -0.5, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
-  body.matrix.scale(0.5, 1, 0.5);
+  body.matrix.setTranslate(-0.25, -0.75, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
+  body.matrix.rotate(-5, 1, 0, 0);
+  body.matrix.scale(0.5, 0.3, 0.5);
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
   body.render();
 
   // Draw a left arm
   var leftArm = new Cube();
   leftArm.color = [1, 1, 0, 1];
-  leftArm.matrix.translate(0.7, 0, 0.0);
-  leftArm.matrix.rotate(45, 0, 0, 1);
+  leftArm.matrix.translate(0, -0.5, 0.0);
+  leftArm.matrix.rotate(-5, 1, 0, 0);
+  leftArm.matrix.rotate(0, 0, 0, 1);
   leftArm.matrix.scale(0.25, 0.7, 0.5);
+  leftArm.matrix.translate(-0.5, 0, 0);
   leftArm.render();
 
-  // Tet box
+  // Test box
   var box = new Cube();
   box.color = [1, 0, 1, 1];
-  box.matrix.translate(0, 0, -0.5, 0);
+  box.matrix.translate(-0.1, 0.1, 0, 0);
   box.matrix.rotate(-30, 1, 0, 0);
-  box.matrix.scale(0.5, 0.5, 0.5);
+  box.matrix.scale(0.2, 0.4, 0.2);
   box.render();
 
   // Check the time at the end of the function, and show on web page

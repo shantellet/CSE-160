@@ -1,0 +1,84 @@
+<!-- Shantelle Toh -->
+<!-- shtoh@ucsc.edu -->
+<!-- Notes to grader:
+ Thanks for grading my assignment!
+ My drawing and awesomeness features are described in the live site.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Change a point color</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+    <p>
+
+    <p id="numdot"> XXX </p>
+    
+    <button type="button" id="green">Green</button>
+    <button type="button" id="red">Red</button>
+    
+    <button type="button" id="clearButton">Clear</button>
+    <p>
+    
+    <button type="button" id="pointButton">Point</button>
+    <button type="button" id="triButton">Triangle</button>
+    <button type="button" id="circleButton">Circle</button>
+
+    <p></p>
+    <b>Awesomeness:</b>
+    <button type="button" id="starButton">Star</button>
+    <button type="button" id="randomButton">Random</button>
+    <p><br>
+    <button type="button" id="pictureButton">Draw Picture</button>
+
+    <p>
+    Red <input type="range" min="0" max="100" value="100" class="slider" id="redSlide">
+    <p>
+    Green <input type="range" min="0" max="100" value="0" class="slider" id="greenSlide">
+    <p>
+    Blue <input type="range" min="0" max="100" value="0" class="slider" id="blueSlide">
+
+    <p>
+    Number of Segments <input type="range" min="10" max="100" value="10" class="slider" id="segmentSlide">
+    <p>
+    Number of Points for Stars <input type="range" min="5" max="8" value="10" class="slider" id="pointsSlide">
+    <p>
+    
+    <p>
+    Size <input type="range" min="5" max="40" value="0" class="slider" id="sizeSlide">
+
+    <br>
+    <br>
+    <h3>Rabbit Drawing:</h3>
+    <p>The rabbit is generated with random colors each time the "Draw Picture" button is pressed.</p>
+    <img src="rabbitDrawing.jpg" height="350px"  alt="rabbit drawing">
+    <img src="rabbitGraphDrawing.png" height="350px" alt="rabbit graph drawing">
+
+    <br>
+    <br>
+    <h3>Awesomeness!</h3>
+    <p>I added 2 features:
+      <ol>
+        <li>A star shape that the user can use to paint with. I wanted to experiment more with geometry so I went for a star shape. And aren't stars nice?</li>
+        <li>Ability to paint random shapes with random sizes and colors. It's a good way to create some modern art.</li>
+      </ol>
+    </p>
+    
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="Star.js"></script>
+    <script src="Circle.js"></script>
+    <script src="Cube.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Point.js"></script>
+    <script src="BlockyAnimal.js"></script>
+  </body>
+</html>

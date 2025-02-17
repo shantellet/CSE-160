@@ -224,7 +224,26 @@ function main() {
   // gl.clear(gl.COLOR_BUFFER_BIT);
 
   // Render
-  renderScene(); // instead of clearing the canvas and waiting for a click, now going to render all shapes at the end of the canvas
+  // renderScene(); // instead of clearing the canvas and waiting for a click, now going to render all shapes at the end of the canvas
+  requestAnimationFrame(tick); // requet the initial animation frame at the beginning of main, which will get everything started. now this will run automatically.
+}
+
+var g_startTime = performance.now() / 1000.0;
+var g_seconds = performance.now() / 1000.0 - g_startTime;
+
+// Called by browser repeatedly whenever it's time
+function tick() {
+  // Save the current time
+  g_seconds = performance.now() / 1000.0 - g_startTime;
+  console.log(g_seconds);
+  // // Print some debug info so we know we are running
+  // console.log(performance.now());
+
+  // Draw everything
+  renderScene();
+
+  // Tell the browser to update again when it has time (when to call myself (me, a function) again)
+  requestAnimationFrame(tick);
 }
 
 var g_shapesList = []; // list of points
@@ -345,15 +364,16 @@ function renderScene() {
   body.render();
 
   // Draw a left arm
-  var leftArm = new Cube();
-  leftArm.color = [1, 1, 0, 1];
-  leftArm.matrix.translate(0, -0.5, 0.0);
-  leftArm.matrix.rotate(-5, 1, 0, 0);
-  leftArm.matrix.rotate(-g_yellowAngle, 0, 0, 1);
-  var yellowCoordinatesMat = new Matrix4(leftArm.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
-  leftArm.matrix.scale(0.25, 0.7, 0.5);
-  leftArm.matrix.translate(-0.5, 0, 0);
-  leftArm.render();
+  var yellow = new Cube();
+  yellow.color = [1, 1, 0, 1];
+  yellow.matrix.translate(0, -0.5, 0.0);
+  yellow.matrix.rotate(-5, 1, 0, 0);
+  // yellow.matrix.rotate(g_yellowAngle, 0, 0, 1);
+  yellow.matrix.rotate(45*Math.sin(g_seconds), 0, 0, 1); // 45 to give it an amount of angle it can move between
+  var yellowCoordinatesMat = new Matrix4(yellow.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
+  yellow.matrix.scale(0.25, 0.7, 0.5);
+  yellow.matrix.translate(-0.5, 0, 0);
+  yellow.render();
 
   // Test box
   var box = new Cube();

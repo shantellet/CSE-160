@@ -99,6 +99,8 @@ let g_selectedNumPoints = 5;
 let g_globalAngle = 0;
 let g_yellowAngle = 0
 let g_magentaAngle = 0;
+let g_yellowAnimation = false;
+let g_magentaAnimation = false;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
@@ -123,6 +125,12 @@ function addActionsForHtmlUI() {
   document.getElementById('sizeSlide').addEventListener('mouseup', function() { g_selectedSize = this.value; });
   document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
   document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
+  
+  document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation = false; };
+  document.getElementById('animationYellowOnButton').onclick = function() { g_yellowAnimation = true; };
+
+  document.getElementById('animationMagentaOffButton').onclick = function() { g_magentaAnimation = false; };
+  document.getElementById('animationMagentaOnButton').onclick = function() { g_magentaAnimation = true; }
 
   document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderScene(); });
   document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
@@ -235,7 +243,11 @@ var g_seconds = performance.now() / 1000.0 - g_startTime;
 function tick() {
   // Save the current time
   g_seconds = performance.now() / 1000.0 - g_startTime;
-  console.log(g_seconds);
+  // console.log(g_seconds);
+
+  // Update Animation Angles
+  updateAnimationAngles();
+
   // // Print some debug info so we know we are running
   // console.log(performance.now());
 
@@ -244,6 +256,16 @@ function tick() {
 
   // Tell the browser to update again when it has time (when to call myself (me, a function) again)
   requestAnimationFrame(tick);
+}
+
+// Update the angles of everything if currently animated
+function updateAnimationAngles() {
+  if (g_yellowAnimation) {
+    g_yellowAngle = (45*Math.sin(g_seconds));
+  }
+  if (g_magentaAnimation) {
+    g_magentaAngle = (45*Math.sin(3*g_seconds));
+  }
 }
 
 var g_shapesList = []; // list of points
@@ -363,13 +385,19 @@ function renderScene() {
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
   body.render();
 
+  // want a function that lets us update the state of the angles but does not immediately flash back to the last thing on the slider
   // Draw a left arm
   var yellow = new Cube();
   yellow.color = [1, 1, 0, 1];
   yellow.matrix.translate(0, -0.5, 0.0);
   yellow.matrix.rotate(-5, 1, 0, 0);
-  // yellow.matrix.rotate(g_yellowAngle, 0, 0, 1);
-  yellow.matrix.rotate(45*Math.sin(g_seconds), 0, 0, 1); // 45 to give it an amount of angle it can move between
+  // if (g_yellowAnimation) { // but this makes it start animating where the animation left off
+  //   yellow.matrix.rotate(45*Math.sin(g_seconds), 0, 0, 1); // 45 to give it an amount of angle it can move between
+  // }
+  // else {
+  //   yellow.matrix.rotate(g_yellowAngle, 0, 0, 1);
+  // }
+  yellow.matrix.rotate(g_yellowAngle, 0, 0, 1);
   var yellowCoordinatesMat = new Matrix4(yellow.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   yellow.matrix.scale(0.25, 0.7, 0.5);
   yellow.matrix.translate(-0.5, 0, 0);

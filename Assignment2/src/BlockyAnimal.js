@@ -83,7 +83,7 @@ function connectVariablesToGLSL() {
 
 let g_selectedColor = [1.0,1.0,1.0,1.0];
 
-let g_xGlobalAngle = 0;
+let g_xGlobalAngle = -35;
 let g_yGlobalAngle = 0;
 // let g_zGlobalAngle = 0;
 
@@ -97,18 +97,22 @@ let g_neckAngle = 0;
 // let g_magentaAngle = 0;
 let g_tailAngle = 0;
 
-let g_earAnimation = true;
-let g_frontLeg1Animation = true;
-let g_frontLeg2Animation = true;
-let g_neckAnimation = true;
-let g_backLeg1Animation = true;
-let g_backLeg2Animation = true;
-let g_tailAnimation = true;
+let g_earAnimation = false;
+let g_frontLeg1Animation = false;
+let g_frontLeg2Animation = false;
+let g_neckAnimation = false;
+let g_backLeg1Animation = false;
+let g_backLeg2Animation = false;
+// let g_tailAnimation = false;
 // let g_yellowAnimation = true;
 // let g_magentaAnimation = true;
+let g_animation = true;
+let shift = false;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
+  document.getElementById('animationOffButton').onclick = function() { g_animation = false; };
+  document.getElementById('animationOnButton').onclick = function() { g_animation = true; };
   // document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation = false; };
   // document.getElementById('animationYellowOnButton').onclick = function() { g_yellowAnimation = true; };
 
@@ -133,6 +137,12 @@ let lastMouseX = 0;
 let lastMouseY = 0;
 
 function startDragging(ev) {
+  if (ev.shiftKey && !shift) {
+    shift = true;
+  }
+  else if (ev.shiftKey && shift) {
+    shift = false;
+  }
   if (ev.target === canvas) {
     dragging = true;
     lastMouseX = ev.clientX;
@@ -213,25 +223,34 @@ function tick() {
 
 // Update the angles of everything if currently animated
 function updateAnimationAngles() {
-  if (g_earAnimation) {
+  if (g_animation) {
     g_earAngle = (10*Math.cos(3*g_seconds));
-  }
-  if (g_frontLeg1Animation) {
     g_frontLeg1Angle = (20*Math.sin(3*g_seconds+0.7));
-  }
-  if (g_frontLeg2Animation) {
     g_frontLeg2Angle = (20*Math.sin(3*g_seconds));
-  }
-  if (g_neckAnimation) {
     g_neckAngle = (5*Math.sin(3*g_seconds));
-  }
-  if (g_backLeg1Animation) {
     g_backLeg1Angle = (20*Math.cos(3*g_seconds+0.7));
-  }
-  if (g_backLeg2Animation) {
     g_backLeg2Angle = (20*Math.cos(3*g_seconds));
+    // g_tailAngle = (40*Math.sin(4*g_seconds));
   }
-  if (g_tailAnimation) {
+  // if (g_earAnimation) {
+  //   g_earAngle = (10*Math.cos(3*g_seconds));
+  // }
+  // if (g_frontLeg1Animation) {
+  //   g_frontLeg1Angle = (20*Math.sin(3*g_seconds+0.7));
+  // }
+  // if (g_frontLeg2Animation) {
+  //   g_frontLeg2Angle = (20*Math.sin(3*g_seconds));
+  // }
+  // if (g_neckAnimation) {
+  //   g_neckAngle = (5*Math.sin(3*g_seconds));
+  // }
+  // if (g_backLeg1Animation) {
+  //   g_backLeg1Angle = (20*Math.cos(3*g_seconds+0.7));
+  // }
+  // if (g_backLeg2Animation) {
+  //   g_backLeg2Angle = (20*Math.cos(3*g_seconds));
+  // }
+  if (shift) {
     g_tailAngle = (40*Math.sin(4*g_seconds));
   }
 }
@@ -535,7 +554,9 @@ function renderScene() {
   tail1.matrix.translate(0.53, 0.1, 0.3);
   tail1.matrix.rotate(45, 0, 0, 1);
   tail1.matrix.rotate(90, 1, 0, 0);
-  tail1.matrix.rotate(g_tailAngle, 1, 0, 0);
+  if (shift) {
+    tail1.matrix.rotate(g_tailAngle, 1, 0, 0);
+  }
   var tail1CoordinatesMat = new Matrix4(tail1.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   tail1.matrix.scale(0.1, -0.1, 0.6);
   tail1.matrix.translate(-0.5, 0, 0);

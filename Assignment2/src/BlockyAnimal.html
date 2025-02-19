@@ -35,7 +35,7 @@
     <b>Awesomeness:</b>
     <button type="button" id="starButton">Star</button>
     <button type="button" id="randomButton">Random</button>
-    <p><br>
+    <p>
     <button type="button" id="pictureButton">Draw Picture</button>
 
     <p>
@@ -69,25 +69,8 @@
     <button type="button" id="animationYellowOffButton">OFF</button>
 
     <p>
-    Camera Angle <input type="range" min="0" max="90" value="5" class="slider" id="angleSlide">
+    Camera Angle <input type="range" min="-90" max="90" value="-90" class="slider" id="angleSlide">
 
-    <br>
-    <br>
-    <h3>Rabbit Drawing:</h3>
-    <p>The rabbit is generated with random colors each time the "Draw Picture" button is pressed.</p>
-    <img src="rabbitDrawing.jpg" height="350px"  alt="rabbit drawing">
-    <img src="rabbitGraphDrawing.png" height="350px" alt="rabbit graph drawing">
-
-    <br>
-    <br>
-    <h3>Awesomeness!</h3>
-    <p>I added 2 features:
-      <ol>
-        <li>A star shape that the user can use to paint with. I wanted to experiment more with geometry so I went for a star shape. And aren't stars nice?</li>
-        <li>Ability to paint random shapes with random sizes and colors. It's a good way to create some modern art.</li>
-      </ol>
-    </p>
-    
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>
@@ -96,6 +79,7 @@
     <script src="Circle.js"></script>
     <script src="Cube.js"></script>
     <script src="Triangle.js"></script>
+    <script src="Pyramid.js"></script>
     <script src="Point.js"></script>
     <script src="BlockyAnimal.js"></script>
   </body>

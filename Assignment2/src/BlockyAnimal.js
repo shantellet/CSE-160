@@ -24,7 +24,6 @@ let canvas;
 let gl;
 let a_Position;
 let u_FragColor;
-let u_Size;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
 
@@ -33,7 +32,6 @@ function setupWebGL() {
   canvas = document.getElementById('webgl');
 
   // Get the rendering context for WebGL
-  // gl = getWebGLContext(canvas);
   gl = canvas.getContext("webgl", { preserveDrawingBuffer: true}); // tells GLContext which buffers to preserve rather than reallocating and clearing them in between. this enhances the performance
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
@@ -83,20 +81,12 @@ function connectVariablesToGLSL() {
   gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
 }
 
-// Constants
-const POINT = 0;
-const TRIANGLE = 1;
-const CIRCLE = 2;
-const STAR = 3;
-const DRAWING = 4;
-const RANDOM = 5;
-
 let g_selectedColor = [1.0,1.0,1.0,1.0];
-let g_selectedSize = 5;
-let g_selectedType = POINT;
-let g_selectedNumSegments = 10;
-let g_selectedNumPoints = 5;
-let g_globalAngle = 0;
+
+let g_xGlobalAngle = 0;
+let g_yGlobalAngle = 0;
+let g_zGlobalAngle = 0;
+
 let g_frontLeg1Angle = 0;
 let g_frontLeg2Angle = 0;
 let g_backLeg1Angle = 0;
@@ -105,6 +95,7 @@ let g_neckAngle = 0;
 let g_yellowAngle = 0
 let g_magentaAngle = 0;
 let g_tailAngle = 0;
+
 let g_frontLeg1Animation = true;
 let g_frontLeg2Animation = true;
 let g_neckAnimation = true;
@@ -116,28 +107,6 @@ let g_magentaAnimation = true;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
-  // Button Events (Shape Type)
-  document.getElementById('green').onclick = function() { g_selectedColor = [0.0, 1.0, 0.0, 1.0]; };
-  document.getElementById('red').onclick = function() { g_selectedColor = [1.0, 0.0, 0.0, 1.0]; };
-  document.getElementById('clearButton').onclick = function() { g_shapesList = []; renderScene(); }; // clear g_shapesList
-
-  document.getElementById('pointButton').onclick = function() { g_selectedType = POINT };
-  document.getElementById('triButton').onclick = function() { g_selectedType = TRIANGLE };
-  document.getElementById('circleButton').onclick = function() { g_selectedType = CIRCLE };
-  document.getElementById('starButton').onclick = function() { g_selectedType = STAR };
-  document.getElementById('pictureButton').onclick = function() { g_selectedType = DRAWING };
-  document.getElementById('randomButton').onclick = function() { g_selectedType = RANDOM };
-
-  // Slider Events
-  document.getElementById('redSlide').addEventListener('mouseup', function() { g_selectedColor[0] = this.value / 100; });
-  document.getElementById('greenSlide').addEventListener('mouseup', function() { g_selectedColor[1] = this.value / 100; });
-  document.getElementById('blueSlide').addEventListener('mouseup', function() { g_selectedColor[2] = this.value / 100; });
-  
-  // Size Slider Events
-  document.getElementById('sizeSlide').addEventListener('mouseup', function() { g_selectedSize = this.value; });
-  document.getElementById('segmentSlide').addEventListener('mouseup', function() { g_selectedNumSegments = this.value; });
-  document.getElementById('pointsSlide').addEventListener('mouseup', function() { g_selectedNumPoints = this.value; });
-  
   document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation = false; };
   document.getElementById('animationYellowOnButton').onclick = function() { g_yellowAnimation = true; };
 
@@ -146,82 +115,12 @@ function addActionsForHtmlUI() {
 
   document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderScene(); });
   document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
-  document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderScene(); });
+
+  document.getElementById('xAngleSlide').addEventListener('input', function() { g_xGlobalAngle = this.value; renderScene(); });
+  document.getElementById('yAngleSlide').addEventListener('input', function() { g_yGlobalAngle = this.value; renderScene(); });
+  document.getElementById('zAngleSlide').addEventListener('input', function() { g_zGlobalAngle = this.value; renderScene(); });
 
   document.getElementById('pictureButton').onclick = function() { drawPicture(); };
-}
-
-// draw a picture of a rabbit using triangles of random colors
-function drawPicture() {
-  // A = (-0.27, 0.324)
-  // B = (-0.374, 0.226)
-  // C = (-0.267, 0.128)
-  // D = (-0.12, 0.358)
-  // E = (-0.035, 0.674)
-  // F = (0.048, 0.742)
-  // G = (0.062, 0.638)
-  // H = (-0.096, 0.273)
-  // I = (0.2, 0.624)
-  // J = (-0.057, 0.165)
-  // K = (-0.221, -0.015)
-  // L = (0, 0.004)
-  // M = (0.323, 0.03)
-  // N = (-0.148, -0.116)
-  // O = (0.399, -0.176)
-  // P = (-0.141, -0.201)
-  // Q = (0.366, -0.398)
-  // R = (0.428, -0.283)
-  // S = (0.009, -0.133)
-  // T = (0.129, -0.282)
-  // U = (-0.176, -0.402)
-  // V = (-0.069, -0.358)
-  // W = (-0.18, -0.358)
-  // Z = (-0.25, -0.24)
-  // A_1 = (-0.207, -0.275)
-  // B_1 = (0.26, -0.232)
-  // the triangles compose of those points: 
-  // ABJ, ADJ, BCJ, CJK, DEH, EFG, EGH, GHI, JKL, JLM, KMN, MNO, NPS, NPZ, ORQ, OST, OQB_1, PST, PZA_1, QUB_1, UVW
-  // triangles in form of arrays with 6 elements made of the vertex coordinates, with commas separating the arrays
-      
-  // define triangle vertices
-  const triangles = [
-    [-0.27, 0.324, -0.374, 0.226, -0.057, 0.165], // ABJ
-    [-0.27, 0.324, -0.12, 0.358, -0.057, 0.165], // ADJ
-    [-0.374, 0.226, -0.267, 0.128, -0.057, 0.165], // BCJ
-    [-0.267, 0.128, -0.057, 0.165, -0.221, -0.015], // CJK
-    [-0.035, 0.674, -0.096, 0.273, -0.12, 0.358], // DEH
-    [-0.035, 0.674, 0.048, 0.742, 0.062, 0.638], // EFG
-    [-0.035, 0.674, 0.062, 0.638, -0.096, 0.273], // EGH
-    [0.062, 0.638, -0.096, 0.273, 0.2, 0.624], // GHI
-    [-0.057, 0.165, -0.221, -0.015, 0, 0.004], // JKL
-    [-0.057, 0.165, 0, 0.004, 0.323, 0.03], // JLM
-    [-0.221, -0.015, -0.148, -0.116, 0.323, 0.03], // KMN
-    [0.323, 0.03, 0.399, -0.176, -0.148, -0.116], // MNO
-    [-0.148, -0.116, -0.141, -0.201, 0.009, -0.133], // NPS
-    [-0.148, -0.116, -0.25, -0.24, -0.141, -0.201], // NPZ
-    [0.399, -0.176, 0.366, -0.398, 0.428, -0.283], // ORQ
-    [0.399, -0.176, 0.009, -0.133, 0.129, -0.282], // OST
-    [0.399, -0.176, 0.366, -0.398, 0.26, -0.232], // OQB_1
-    [-0.141, -0.201, 0.009, -0.133, 0.129, -0.282], // PST
-    [-0.141, -0.201, -0.25, -0.24, -0.207, -0.275], // PZA_1
-    [0.366, -0.398, -0.176, -0.402, 0.26, -0.232], // QUB_1
-    [-0.176, -0.402, -0.069, -0.358, -0.18, -0.358] // UVW
-  ];
-  
-  const size = 1.0; // filler size (just for shader so it works)
-  
-  gl.uniform1f(u_Size, size);
-
-  // 1 random color for the entire drawing
-  // const color = [Math.random(), Math.random(), Math.random(), 1.0];
-  // gl.uniform4f(u_FragColor, color[0], color[1], color[2], color[3]);
-  
-  // random color for each of the triangles
-  for (const triangle of triangles) {
-    const color = [Math.random(), Math.random(), Math.random(), 1.0];
-    gl.uniform4f(u_FragColor, color[0], color[1], color[2], color[3]);
-    drawTriangle(triangle);
-  }
 }
 
 function main() {
@@ -234,8 +133,8 @@ function main() {
   addActionsForHtmlUI();
 
   // Register function (event handler) to be called on a mouse press
-  canvas.onmousedown = click;
-  canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) } }; // want to draw when move mouse with mouse pressed
+  // canvas.onmousedown = click;
+  // canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) } }; // want to draw when move mouse with mouse pressed
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.6, 0.8, 1.0, 1.0);
@@ -290,95 +189,34 @@ function updateAnimationAngles() {
   if (g_tailAnimation) {
     g_tailAngle = (30*Math.sin(3*g_seconds));
   }
-  // if (g_yellowAnimation) {
-  //   g_yellowAngle = (30*Math.sin(3*g_seconds));
-  // }
-  // if (g_magentaAnimation) {
-  //   g_magentaAngle = (30*Math.sin(3*g_seconds));
-  // }
 }
 
 var g_shapesList = []; // list of points
 
-// var g_points = [];  // The array for the position of a mouse press
-// var g_colors = [];  // The array to store the color of a point
-// var g_sizes = []; // the array to store the size of a point
-
 function click(ev) {
 
   // Extract the event click and return it in WebGL coordinates
-  let [x, y] = convertCoordinatesEventToGL(ev);
+  // let [x, y] = convertCoordinatesEventToGL(ev);
 
   // Create and store the new point
-  let point;
-  if (g_selectedType == POINT) {
-    point = new Point();
-  }
-  else if (g_selectedType == TRIANGLE) {
-    point = new Triangle();
-  }
-  else if (g_selectedType == CIRCLE) {
-    point = new Circle();
-    point.segments = g_selectedNumSegments;
-  }
-  // Awesomeness: create a new shape, star
-  else if (g_selectedType == STAR) {
-    point = new Star();
-    point.points = g_selectedNumPoints;
-  }
-  // Awesomeness: create a random shape
-  else if (g_selectedType == RANDOM) {
-    const shapes = [POINT, CIRCLE, TRIANGLE, STAR];
-    let choice = shapes[Math.floor(Math.random() * shapes.length)];
-    if (choice == POINT) {
-      point = new Point();
-    }
-    else if (choice == TRIANGLE) {
-      point = new Triangle();
-    }
-    else if (choice == CIRCLE) {
-      point = new Circle();
-      point.segments = g_selectedNumSegments;
-    }
-    else if (choice == STAR) {
-      point = new Star();
-      point.points = g_selectedNumPoints;
-    }
-  }
-  point.position = [x, y];
-  point.color = g_selectedColor.slice();
-  point.size = g_selectedSize;
-
-  // give the random shape random position, color, size, etc. as well
-  if (g_selectedType == RANDOM) {
-    point.position = [Math.random() * 2.0 - 1.0, Math.random() * 2.0 - 1.0]; // random nums between -1 and 1
-    point.color = [Math.random(), Math.random(), Math.random(), 1.0];
-    point.size = Math.random() * 35.0 + 5.0;
-    if (point.type == "circle") {
-      point.segments = Math.floor(Math.random() * 90 + 10);
-    }
-    else if (point.type == "star") {
-      point.points = Math.floor(Math.random() * 3 + 5);
-    }
-  }
-
-  g_shapesList.push(point);
+  // let point;
+  // point.position = [x, y];
   
   // Draw every shape that is supposed to be in the canvas
-  renderScene();
+  // renderScene();
 }
 
 // Extract the event click adn return it in WebGL coordinates
-function convertCoordinatesEventToGL(ev) {
-  var x = ev.clientX; // x coordinate of a mouse pointer
-  var y = ev.clientY; // y coordinate of a mouse pointer
-  var rect = ev.target.getBoundingClientRect();
+// function convertCoordinatesEventToGL(ev) {
+//   var x = ev.clientX; // x coordinate of a mouse pointer
+//   var y = ev.clientY; // y coordinate of a mouse pointer
+//   var rect = ev.target.getBoundingClientRect();
 
-  x = ((x - rect.left) - canvas.width/2)/(canvas.width/2);
-  y = (canvas.height/2 - (y - rect.top))/(canvas.height/2);
+//   x = ((x - rect.left) - canvas.width/2)/(canvas.width/2);
+//   y = (canvas.height/2 - (y - rect.top))/(canvas.height/2);
 
-  return ([x, y]);
-}
+//   return ([x, y]);
+// }
 
 // Draw every shape that is supposed to be in the canvas
 function renderScene() {
@@ -386,24 +224,27 @@ function renderScene() {
   // Check the time at the start of this function
   var startTime = performance.now();
 
-  // Pass the matrix to u_ModelMatrix attribute
-  var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
-  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements); // pass elements to the matrix
+  var globalRotMat = new Matrix4();
+  globalRotMat.rotate(g_xGlobalAngle, 0, 1, 0);
+  globalRotMat.rotate(g_yGlobalAngle, 1, 0, 0);
+  globalRotMat.rotate(g_zGlobalAngle, 0, 0, 1);
+  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
+
+  // // Pass the matrix to u_ModelMatrix attribute
+  // var globalXRotMat = new Matrix4().rotate(g_xGlobalAngle, 0, 1, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
+  // var globalYRotMat = new Matrix4().rotate(g_yGlobalAngle, 1, 0, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
+  
+  // var combinedRotMat = globalXRotMat.multiply(globalYRotMat);
+  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, combinedRotMat.elements); // pass elements to the matrix
+
+  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalXRotMat.elements); // pass elements to the matrix
+
+  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalYRotMat.elements); // pass elements to the matrix
 
   // Clear <canvas>
   // clear the DEPTH_BUFFER when you clear your screen
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
-
-  // var len = g_points.length; // no guarantee that the g_points list is the same length as the colors or size list
-  // var len = g_shapesList.length;
-
-  // for(var i = 0; i < len; i++) {
-  //   g_shapesList[i].render();
-  // }
-
-  // Draw a test triangle
-  // drawTriangle3D( [-1.0, 0.0, 0.0,  -0.5, -1.0, 0.0,  0.0, 0.0, 0.0] );
   
   var body = new Cube(); // body of animal
   body.color = [1, 1, 0, 1];
@@ -496,6 +337,8 @@ function renderScene() {
   snout.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   snout.render();
 
+
+
   // want a function that lets us update the state of the angles but does not immediately flash back to the last thing on the slider
   // frontThigh1
   var frontThigh1 = new Cube();
@@ -532,9 +375,6 @@ function renderScene() {
   
 
 
-
-
-
   // frontThigh2
   var frontThigh2 = new Cube();
   frontThigh2.color = [1, 1, 0, 1];
@@ -567,9 +407,6 @@ function renderScene() {
   frontFoot2.matrix.scale(0.2, -0.1, 0.25);
   frontFoot2.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   frontFoot2.render();
-
-
-
 
 
 
@@ -608,9 +445,6 @@ function renderScene() {
 
 
 
-
-
-
   // backThigh2
   var backThigh2 = new Cube();
   backThigh2.color = [1, 1, 0, 1];
@@ -646,10 +480,6 @@ function renderScene() {
 
 
 
-  
-
-
-
   // tail1
   var tail1 = new Cube();
   tail1.color = [1, 0.5, 0.5, 1];
@@ -660,30 +490,6 @@ function renderScene() {
   tail1.matrix.scale(0.1, -0.1, 0.6);
   tail1.matrix.translate(-0.5, 0, 0);
   tail1.render();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // A bunch of rotating cubes
-  // var K = 10.0;
-  // for (var i = 1; i < K; i++) {
-  //   var c = new Cube();
-  //   c.matrix.translate(-0.8, 1.9 * i / K - 1.0, 0);
-  //   c.matrix.rotate(g_seconds * 100, 1, 1, 1);
-  //   c.matrix.scale(0.1, 0.5 / K, 1.0 / K);
-  //   c.render();
-  // }
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;

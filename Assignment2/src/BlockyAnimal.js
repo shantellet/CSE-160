@@ -85,15 +85,15 @@ let g_selectedColor = [1.0,1.0,1.0,1.0];
 
 let g_xGlobalAngle = 0;
 let g_yGlobalAngle = 0;
-let g_zGlobalAngle = 0;
+// let g_zGlobalAngle = 0;
 
 let g_frontLeg1Angle = 0;
 let g_frontLeg2Angle = 0;
 let g_backLeg1Angle = 0;
 let g_backLeg2Angle = 0;
 let g_neckAngle = 0;
-let g_yellowAngle = 0
-let g_magentaAngle = 0;
+// let g_yellowAngle = 0
+// let g_magentaAngle = 0;
 let g_tailAngle = 0;
 
 let g_frontLeg1Animation = true;
@@ -102,25 +102,65 @@ let g_neckAnimation = true;
 let g_backLeg1Animation = true;
 let g_backLeg2Animation = true;
 let g_tailAnimation = true;
-let g_yellowAnimation = true;
-let g_magentaAnimation = true;
+// let g_yellowAnimation = true;
+// let g_magentaAnimation = true;
 
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
-  document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation = false; };
-  document.getElementById('animationYellowOnButton').onclick = function() { g_yellowAnimation = true; };
+  // document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation = false; };
+  // document.getElementById('animationYellowOnButton').onclick = function() { g_yellowAnimation = true; };
 
-  document.getElementById('animationMagentaOffButton').onclick = function() { g_magentaAnimation = false; };
-  document.getElementById('animationMagentaOnButton').onclick = function() { g_magentaAnimation = true; }
+  // document.getElementById('animationMagentaOffButton').onclick = function() { g_magentaAnimation = false; };
+  // document.getElementById('animationMagentaOnButton').onclick = function() { g_magentaAnimation = true; }
 
-  document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderScene(); });
-  document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
+  // document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderScene(); });
+  // document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
 
-  document.getElementById('xAngleSlide').addEventListener('input', function() { g_xGlobalAngle = this.value; renderScene(); });
-  document.getElementById('yAngleSlide').addEventListener('input', function() { g_yGlobalAngle = this.value; renderScene(); });
-  document.getElementById('zAngleSlide').addEventListener('input', function() { g_zGlobalAngle = this.value; renderScene(); });
+  document.getElementById('xAngleSlide').addEventListener('mousemove', function() { g_xGlobalAngle = parseInt(this.value); renderScene(); });
+  document.getElementById('yAngleSlide').addEventListener('mousemove', function() { g_yGlobalAngle = parseInt(this.value); renderScene(); });
+  // document.getElementById('zAngleSlide').addEventListener('input', function() { g_zGlobalAngle = this.value; renderScene(); });
 
-  document.getElementById('pictureButton').onclick = function() { drawPicture(); };
+  canvas.onmousedown = startDragging;
+  canvas.onmouseup = stopDragging;
+  canvas.onmousemove = handleDragging;
+
+}
+
+let dragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+function startDragging(ev) {
+  if (ev.target === canvas) {
+    dragging = true;
+    lastMouseX = ev.clientX;
+    lastMouseY = ev.clientY;
+  }
+}
+
+function stopDragging(ev) {
+  if (dragging && ev.target == canvas) {
+    dragging = false;
+  }
+}
+
+
+function handleDragging(ev) {
+    let newX = ev.clientX;
+    let newY = ev.clientY;
+    if (dragging) {
+      let deltaX = newX - lastMouseX;
+      let deltaY = newY - lastMouseY;
+
+      g_xGlobalAngle += deltaX;
+      g_yGlobalAngle += deltaY;
+      document.getElementById('xAngleSlide').value = g_xGlobalAngle;
+      document.getElementById('yAngleSlide').value = g_yGlobalAngle;
+
+      renderScene();
+    }
+    lastMouseX = newX;
+    lastMouseY = newY;
 }
 
 function main() {
@@ -227,7 +267,7 @@ function renderScene() {
   var globalRotMat = new Matrix4();
   globalRotMat.rotate(g_xGlobalAngle, 0, 1, 0);
   globalRotMat.rotate(g_yGlobalAngle, 1, 0, 0);
-  globalRotMat.rotate(g_zGlobalAngle, 0, 0, 1);
+  // globalRotMat.rotate(g_zGlobalAngle, 0, 0, 1);
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
   // // Pass the matrix to u_ModelMatrix attribute

@@ -390,6 +390,12 @@ function click(ev) {
 //   return ([x, y]);
 // }
 
+
+// to control where our camera is in the world
+var g_eye = [0,0,3];
+var g_at = [0,0,-100];
+var g_up = [0,1,0];
+
 // Draw every shape that is supposed to be in the canvas
 function renderScene() {
 
@@ -398,10 +404,13 @@ function renderScene() {
 
   // Pass the projection matrix
   var projMat = new Matrix4();
+  projMat.setPerspective(50, 1*canvas.width / canvas.height, 0.1, 100); // 90 deg wide, aspect width/height = 1, near plane is 0.1 (pretty close) and far plane is 100 so we have a wide perspective
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
   // Pass the view matrix
   var viewMat = new Matrix4();
+  // viewMat.setLookAt(0,0,3, 0,0,-100, 0,1,0); // (eye, at, up)
+  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   var globalRotMat = new Matrix4();

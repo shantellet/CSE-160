@@ -9,8 +9,10 @@ precision mediump float;
   varying vec2 v_UV;
   uniform mat4 u_ModelMatrix; // add a matrix so we can use it to change where our cube shows up on the screen
   uniform mat4 u_GlobalRotateMatrix; // add a slider that lets us rotate the animal around so we can it from all sides. eventually will be a camera action. simulating a camera
+  uniform mat4 u_ViewMatrix;
+  uniform mat4 u_ProjectionMatrix;
   void main() {
-    gl_Position = u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
+    gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV; // prevent browser from erroring that you're not using the v_UV variable so i'm deleting v_UV
   }`
 
@@ -48,6 +50,8 @@ let a_UV;
 let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
+let u_ViewMatrix;
+let u_ProjectionMatrix;
 let u_Sampler0;
 let u_whichTexture;
 
@@ -96,14 +100,28 @@ function connectVariablesToGLSL() {
   // Get the storage location of u_ModelMatrix
   u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
   if (!u_ModelMatrix) {
-    console.log('Failed to get the storage location of u_FragColor');
+    console.log('Failed to get the storage location of u_ModelMatrix');
     return;
   }
   
   // Get the storage location of u_GlobalRotateMatrix
   u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
   if (!u_GlobalRotateMatrix) {
-    console.log('Failed to get the storage location of u_FragColor');
+    console.log('Failed to get the storage location of u_GlobalRotateMatrix');
+    return;
+  }
+
+  // Get the storage location of u_ViewMatrix
+  u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
+  if (!u_ViewMatrix) {
+    console.log('Failed to get the storage location of u_ViewMatrix');
+    return;
+  }
+  
+  // Get the storage location of u_ProjectionMatrix
+  u_ProjectionMatrix = gl.getUniformLocation(gl.program, 'u_ProjectionMatrix');
+  if (!u_ProjectionMatrix) {
+    console.log('Failed to get the storage location of u_ProjectionMatrix');
     return;
   }
 
@@ -377,6 +395,14 @@ function renderScene() {
 
   // Check the time at the start of this function
   var startTime = performance.now();
+
+  // Pass the projection matrix
+  var projMat = new Matrix4();
+  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
+
+  // Pass the view matrix
+  var viewMat = new Matrix4();
+  gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   var globalRotMat = new Matrix4();
   globalRotMat.rotate(g_xGlobalAngle, 0, 1, 0);

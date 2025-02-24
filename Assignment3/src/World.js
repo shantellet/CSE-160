@@ -3,26 +3,36 @@
 
 
 var VSHADER_SOURCE = `
+precision mediump float;
   attribute vec4 a_Position;
+  attribute vec2 a_UV; // UV coords only have 2 params instead of 4
+  varying vec2 v_UV;
   uniform mat4 u_ModelMatrix; // add a matrix so we can use it to change where our cube shows up on the screen
   uniform mat4 u_GlobalRotateMatrix; // add a slider that lets us rotate the animal around so we can it from all sides. eventually will be a camera action. simulating a camera
   void main() {
     gl_Position = u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
+    v_UV = a_UV; // prevent browser from erroring that you're not using the v_UV variable so i'm deleting v_UV
   }`
 
 // Fragment shader program
 var FSHADER_SOURCE = `
   precision mediump float;
+  varying vec2 v_UV;
+  // varying variable: a_... are variables that come from JS. and they are attributes, so they come by each vertex. so each of the 3 vertices of the triangle will each have a diff UV. need to get that to my fragment shader bc that's where we'll use this info. to pass things from vertex shader to fragment shader, assign them into a varying var. take the same definition and put that in the fragment shader.
   uniform vec4 u_FragColor;
   void main() {
     gl_FragColor = u_FragColor;
+    gl_FragColor = vec4(v_UV, 1.0, 1.0); // now set pixel color to whatever we pass for UV
   }`
+
+
 
 // Global Variables
 // UI elements or data we have to pass from JS to GLSL (which we know we'll only have 1 copy)
 let canvas;
 let gl;
 let a_Position;
+let a_UV;
 let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
@@ -52,6 +62,13 @@ function connectVariablesToGLSL() {
   a_Position = gl.getAttribLocation(gl.program, 'a_Position');
   if (a_Position < 0) {
     console.log('Failed to get the storage location of a_Position');
+    return;
+  }
+
+  // // Get the storage location of a_UV
+  a_UV = gl.getAttribLocation(gl.program, 'a_UV');
+  if (a_UV < 0) {
+    console.log('Failed to get the storage location of a_UV');
     return;
   }
 

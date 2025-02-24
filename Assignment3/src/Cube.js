@@ -25,8 +25,12 @@ class Cube {
       gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
 
       // Front of cube
-      drawTriangle3D( [0, 0, 0,  1, 1, 0,  1, 0, 0] );
-      drawTriangle3D( [0, 0, 0,  0, 1, 0,  1, 1, 0] );
+      // drawTriangle3D( [0, 0, 0,  1, 1, 0,  1, 0, 0] );
+      // vertex pos 1         2        3      1       2       3 uv coords for each vertices 
+      // drawTriangle3DUV( [0, 0, 0,  1, 1, 0,  1, 0, 0], [1, 0,  0, 1,  1, 1] );
+      drawTriangle3DUV( [0, 0, 0,  1, 1, 0,  1, 0, 0], [0, 0,  1, 1,  1, 0] ); // changed uv vals so they span the square. rather than seeing 2 triangles we see smoothly varying UV over the front face of the square
+      drawTriangle3DUV( [0, 0, 0,  0, 1, 0,  1, 1, 0], [0, 0,  0, 1,  1, 1] );
+      // drawTriangle3D( [0, 0, 0,  0, 1, 0,  1, 1, 0] );
 
       // Add fake Lighting (differnt amount of light bouncing off each surface). Pass the color of a point to u_FragColor uniform variable
       gl.uniform4f(u_FragColor, rgba[0] * 0.9, rgba[1] * 0.9, rgba[2] * 0.9, rgba[3]);

@@ -21,10 +21,20 @@ var FSHADER_SOURCE = `
   // varying variable: a_... are variables that come from JS. and they are attributes, so they come by each vertex. so each of the 3 vertices of the triangle will each have a diff UV. need to get that to my fragment shader bc that's where we'll use this info. to pass things from vertex shader to fragment shader, assign them into a varying var. take the same definition and put that in the fragment shader.
   uniform vec4 u_FragColor;
   uniform sampler2D u_Sampler0; // a sampler is a texture that we'll look up from
+  uniform int u_whichTexture;
   void main() {
-    gl_FragColor = u_FragColor;
-    gl_FragColor = vec4(v_UV, 1.0, 1.0); // now set pixel color to whatever we pass for UV
-    gl_FragColor = texture2D(u_Sampler0, v_UV); // Listing 5.7 in book
+    if (u_whichTexture == -2) {
+      gl_FragColor = u_FragColor;    // Use color
+    }
+    else if (u_whichTexture == -1) { // Use UV debug color
+      gl_FragColor = vec4(v_UV, 1.0, 1.0); // now set pixel color to whatever we pass for UV
+    }
+    else if (u_whichTexture == 0) {  // Use texture0
+      gl_FragColor = texture2D(u_Sampler0, v_UV); // listing 5.7 in book
+    }
+    else {                           // Error, put Redish
+      gl_FragColor = vec4(1, 0.2, 0.2, 1);
+    }
   }`
 
 
@@ -39,6 +49,7 @@ let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
+let u_whichTexture;
 
 function setupWebGL() {
   // Retrieve <canvas> element
@@ -100,6 +111,13 @@ function connectVariablesToGLSL() {
   u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
   if (!u_Sampler0) {
     console.log('Failed to get the storage location of u_Sampler0');
+    return false;
+  }
+
+  // Get the storage location of u_whichTexture
+  u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
+  if (!u_whichTexture) {
+    console.log('Failed to get the storage location of u_whichTexture');
     return false;
   }
 
@@ -384,6 +402,7 @@ function renderScene() {
   
   var body = new Cube(); // body of animal
   // body.color = [1, 1, 0, 1];
+  body.textureNum = 0;
   body.matrix.setTranslate(-0.4, -0.3, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
   body.matrix.rotate(0, 1, 0, 0);
   body.matrix.scale(1, 0.5, 0.5);

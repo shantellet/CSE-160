@@ -6,6 +6,7 @@ class Cube {
       // this.size = 5.0;
       // this.segments = 10;
       this.matrix = new Matrix4();
+      this.textureNum = -1; // default is to use the texture
     }
     
     render() {
@@ -15,6 +16,9 @@ class Cube {
       // var xy = g_points[i];
       // var rgba = g_colors[i];
       // var size = g_sizes[i];
+
+      // Pass the texture number
+      gl.uniform1i(u_whichTexture, this.textureNum);
   
       // Pass the position of a point to a_Position variable
       // gl.vertexAttrib3f(a_Position, xy[0], xy[1], 0.0); // dont need this (from Point class) b/c for triangle we're using vertexAttribPointer

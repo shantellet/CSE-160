@@ -20,9 +20,11 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   // varying variable: a_... are variables that come from JS. and they are attributes, so they come by each vertex. so each of the 3 vertices of the triangle will each have a diff UV. need to get that to my fragment shader bc that's where we'll use this info. to pass things from vertex shader to fragment shader, assign them into a varying var. take the same definition and put that in the fragment shader.
   uniform vec4 u_FragColor;
+  uniform sampler2D u_Sampler0; // a sampler is a texture that we'll look up from
   void main() {
     gl_FragColor = u_FragColor;
     gl_FragColor = vec4(v_UV, 1.0, 1.0); // now set pixel color to whatever we pass for UV
+    gl_FragColor = texture2D(u_Sampler0, v_UV); // Listing 5.7 in book
   }`
 
 
@@ -36,6 +38,7 @@ let a_UV;
 let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
+let u_Sampler0;
 
 function setupWebGL() {
   // Retrieve <canvas> element
@@ -91,6 +94,13 @@ function connectVariablesToGLSL() {
   if (!u_GlobalRotateMatrix) {
     console.log('Failed to get the storage location of u_FragColor');
     return;
+  }
+
+  // Get the storage location of u_Sampler0
+  u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
+  if (!u_Sampler0) {
+    console.log('Failed to get the storage location of u_Sampler0');
+    return false;
   }
 
   // Set an initial value for this matrix to identity
@@ -149,6 +159,49 @@ function addActionsForHtmlUI() {
 
 }
 
+function initTextures() {
+  var image = new Image(); // Create the image object
+  if (!image) {
+    console.log('Failed to create the image object');
+    return false;
+  }
+  // Register the event handler to be called on loading an image
+  image.onload = function() { sendTextureToTEXTURE0(image); } // remember the image is stored on a webserver somewhere, and it may be slow to load. so can't immediately take the image and start passing it to the gpu cuz it hasn't loaded. so 'onload' is a function that runs after the loading as completed
+  // Tell the browser to load
+  image.src = './sky.jpg';
+
+  // Can add more texture loading here if want more textures
+
+  return true;
+}
+
+function sendTextureToTEXTURE0(image) {
+  var texture = gl.createTexture(); // Create a texture object
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
+  // Enable texture unit0 (there are 8 texture units and we can store different textures in different units)
+  gl.activeTexture(gl.TEXTURE0);
+  // Bind the texture object to the target
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Set the texture parameters
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  // Set the texture image
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+  // Set the texture unit 0 to the sampler
+  gl.uniform1i(u_Sampler0, 0);
+
+  // gl.clear(gl.COLOR_BUFFER_BIT); // Clear <canvas>
+
+  // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n); // Draw the rectangle
+  console.log('finished loadTexture');
+}
+
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
@@ -204,6 +257,8 @@ function main() {
   // Register function (event handler) to be called on a mouse press
   // canvas.onmousedown = click;
   // canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) } }; // want to draw when move mouse with mouse pressed
+
+  initTextures();
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.6, 0.8, 1.0, 1.0);

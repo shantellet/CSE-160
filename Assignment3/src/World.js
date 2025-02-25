@@ -172,6 +172,8 @@ let g_backLeg2Animation = false;
 let g_animation = true;
 let shift = false;
 
+let camera;
+
 // Set up actions for the HTML UI elements (how to deal with the buttons)
 function addActionsForHtmlUI() {
   document.getElementById('animationOffButton').onclick = function() { g_animation = false; };
@@ -287,12 +289,16 @@ function main() {
   setupWebGL();
   // Set up GLSL shader programs and connect GLSL variables
   connectVariablesToGLSL();
+
+  camera = new Camera();    
   
   addActionsForHtmlUI();
 
   // Register function (event handler) to be called on a mouse press
   // canvas.onmousedown = click;
   // canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) } }; // want to draw when move mouse with mouse pressed
+
+  document.onkeydown = keydown;
 
   initTextures();
 
@@ -305,6 +311,30 @@ function main() {
   // Render
   // renderScene(); // instead of clearing the canvas and waiting for a click, now going to render all shapes at the end of the canvas
   requestAnimationFrame(tick); // requet the initial animation frame at the beginning of main, which will get everything started. now this will run automatically.
+}
+
+function keydown(ev) {
+  if (ev.keyCode == 87) { // w
+    camera.moveForward();
+  }
+  else if (ev.keyCode == 83) { // s
+    camera.moveBackward();
+  }
+  else if (ev.keyCode == 65) { // a
+    camera.moveLeft();
+  }
+  else if (ev.keyCode == 68){ // d
+    camera.moveRight();
+  }
+  else if (ev.keyCode == 81) { // q
+    camera.panLeft();
+  }
+  else if (ev.keyCode == 69) { // e
+    camera.panRight();
+  }
+  
+  renderScene();
+  console.log(ev.keyCode);
 }
 
 var g_startTime = performance.now() / 1000.0;
@@ -392,9 +422,9 @@ function click(ev) {
 
 
 // to control where our camera is in the world
-var g_eye = [0,0,3];
-var g_at = [0,0,-100];
-var g_up = [0,1,0];
+// var g_eye = [0,0,3];
+// var g_at = [0,0,-100];
+// var g_up = [0,1,0];
 
 // Draw every shape that is supposed to be in the canvas
 function renderScene() {
@@ -403,14 +433,16 @@ function renderScene() {
   var startTime = performance.now();
 
   // Pass the projection matrix
-  var projMat = new Matrix4();
-  projMat.setPerspective(50, 1*canvas.width / canvas.height, 0.1, 100); // 90 deg wide, aspect width/height = 1, near plane is 0.1 (pretty close) and far plane is 100 so we have a wide perspective
+  // var projMat = new Matrix4();
+  var projMat = camera.projMat;
+  // projMat.setPerspective(50, 1*canvas.width / canvas.height, 0.1, 100); // 90 deg wide, aspect width/height = 1, near plane is 0.1 (pretty close) and far plane is 100 so we have a wide perspective
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
   // Pass the view matrix
-  var viewMat = new Matrix4();
+  // var viewMat = new Matrix4();
+  var viewMat = camera.viewMat;
   // viewMat.setLookAt(0,0,3, 0,0,-100, 0,1,0); // (eye, at, up)
-  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
+  // viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   var globalRotMat = new Matrix4();

@@ -408,6 +408,47 @@ function click(ev) {
   // renderScene();
 }
 
+var g_map = [ // 1 = wall, 0 = no wall
+  [1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 1, 1, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 1],
+];
+
+// function drawMap() {
+//   for (x = 0; x < 8; x++) {
+//     for (y = 0; y < 8; y++) {
+//       // console.log(x, y);
+//       if (g_map[x][y] == 1) { // if wall
+//         var body = new Cube(); // create a cube to represent the wall
+//         body.color = [1.0, 1.0, 1.0, 1.0];
+//         body.matrix.translate(x - 4, -0.75, y - 4); // move wall to right place
+//         body.render();
+//       }
+//     }
+//   }
+// }
+
+function drawMap() {
+  for (x = 0; x < 32; x++) {
+    for (y = 0; y < 32; y++) {
+      // console.log(x, y);
+      if (x == 0 || x == 31 || y == 0 || y == 31) { // hardcoding boundaries of the box for now
+        var body = new Cube(); // create a cube to represent the wall
+        body.color = [1.0, 1.0, 1.0, 1.0];
+        body.matrix.translate(0, -0.75, 0);
+        body.matrix.scale(0.3, 0.3, 0.3);
+        body.matrix.translate(x - 16, -0.75, y - 16); // move wall to right place
+        body.render();
+      }
+    }
+  }
+}
+
 // Extract the event click adn return it in WebGL coordinates
 // function convertCoordinatesEventToGL(ev) {
 //   var x = ev.clientX; // x coordinate of a mouse pointer
@@ -467,6 +508,7 @@ function renderScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
+  drawMap();
 
 
   // Draw the floor

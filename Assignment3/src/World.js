@@ -466,6 +466,27 @@ function renderScene() {
   // clear the DEPTH_BUFFER when you clear your screen
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+
+  // Draw the floor
+  var body = new Cube(); //
+  body.color = [1, 0, 0, 1];
+  body.textureNum = 0;
+  body.matrix.translate(0, -0.75, 0.0);
+  body.matrix.scale(10, 0, 10); // then scale x by 10 and y by 0 to make it into a flat plane
+  body.matrix.translate(-0.5, 0, -0.5); // box starts out betwen 0 and 1 so move to center first
+  // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
+  body.render();
+
+  // Draw the sky
+  var sky = new Cube();
+  sky.color = [1, 0, 0, 1];
+  sky.textureNum = 0; // change to 1 later
+  sky.matrix.scale(50,50,50);
+  sky.matrix.translate(-0.5, -0.5, -0.5);
+  sky.render();
+
   
   var body = new Cube(); // body of animal
   // body.color = [1, 1, 0, 1];

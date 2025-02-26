@@ -80,51 +80,119 @@ function drawTriangle(vertices) { // video didnt do this but i added gl as a par
 //   return n;
 }
 
+// var g_vertexBuffer = null;
+
+// function initTriangle3D() {
+//   // Create a buffer object
+//   // to pass the vertices to the gpu
+//   g_vertexBuffer = gl.createBuffer(); // make a buffer on the gpu
+//   if (!g_vertexBuffer) {
+//     console.log('Failed to create the buffer object');
+//     return -1;
+//   }
+
+//   // Bind the buffer object to target
+//   gl.bindBuffer(gl.ARRAY_BUFFER, g_vertexBuffer);
+  
+//   // connect it to a_Position (so far buffer array isn't connected to anything)
+//   // already in ColoredPoint.js so don't need it again
+//   // var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+//   // if (a_Position < 0) {
+//   //   console.log('Failed to get the storage location of a_Position');
+//   //   return -1;
+//   // }
+//   // assign the buffer object to a_Position variable
+//   // instead of calling vertexAttrib (single attribute), we're passing a pointer (the pointer for the buffer we just created)
+//   // take buffer we just assigned. assign it to a_Position pointer, which points to the a_Position GLSL var
+//   // the 2 means we have 2 elements per vertex (x, y per vertex)
+//   // the two 0s are for offset and stride (for using interleave) but IGNORE IT
+//   gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0); // change to 3 for 3D--tells how many things are passed per pass-through of the vertex shader
+    
+//   // Enable the assignment to a_Position variable
+//   gl.enableVertexAttribArray(a_Position);
+// }
+
 
 // function that draws a triangle at the position we want it to draw
-function drawTriangle3D(vertices) { // video didnt do this but i added gl as a param otherwise it's not in scope
+function drawTriangle3D() { // video didnt do this but i added gl as a param otherwise it's not in scope
   //   var vertices = new Float32Array([ // declare vertices at this location. this is in JS on the cpu.
   //     // Float32Array tells JS we want it to be precisely floats with 32 bits bc that's the kind we want to pass to GLSL
   //     0, 0.5,   -0.5, -0.5,   0.5, -0.5
   //   ]);
-    var n = 3; // The number of vertices
-  
-    // Create a buffer object
-    // to pass the vertices to the gpu
-    var vertexBuffer = gl.createBuffer(); // make a buffer on the gpu
-    if (!vertexBuffer) {
-      console.log('Failed to create the buffer object');
-      return -1;
-    }
-  
-    // Bind the buffer object to target
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    // Write data into the buffer object
-    // sends the data we defined (the vertices array) to live in a buffer array on the gpu
-  //   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    // bufferData is where we're sending the vertices to the GLSL (gpu)
-    // use STATIC to say we're going to keep using it
-    // use DYNAMIC to say that we keep on sending new buffer data -- create less lag
-    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
-  
-    // connect it to a_Position (so far buffer array isn't connected to anything)
-    // already in ColoredPoint.js so don't need it again
-    // var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-    // if (a_Position < 0) {
-    //   console.log('Failed to get the storage location of a_Position');
-    //   return -1;
+  var vertices = [
+    0, 0, 0,  1, 1, 0,  1, 0, 0, // front
+    0, 0, 0,  0, 1, 0,  1, 1, 0,
+    0, 1, 0,  0, 1, 1,  1, 1, 1, // top
+    0, 1, 0,  1, 1, 1,  1, 1, 0,
+    0, 0, 0,  0, 0, 1,  1, 0, 1, // bottom
+    0, 0, 0,  1, 0, 1,  1, 0, 0,
+    0, 1, 0,  0, 1, 1,  0, 0, 0, // left
+    0, 0, 0,  0, 1, 1,  0, 0, 1,
+    1, 1, 0,  1, 1, 1,  1, 0, 0, // right
+    1, 0, 0,  1, 1, 1,  1, 0, 1,
+    0, 0, 1,  1, 1, 1,  1, 0, 1, // back
+    0, 0, 1,  0, 1, 1,  1, 1, 1
+  ];
+  var uvs = [
+    0, 0,  1, 1,  1, 0, // front
+    0, 0,  0, 1,  1, 1,
+    0, 0,  0, 1,  1, 1, // top
+    0, 0,  1, 1,  1, 0,
+    0, 0,  1, 0,  0, 1, // bottom
+    1, 0,  1, 1,  0, 1,
+    0, 0,  0, 1,  1, 0, // left
+    0, 1,  1, 1,  1, 0,
+    0, 0,  0, 1,  1, 0, // right
+    1, 0,  0, 1,  1, 1,
+    0, 0,  1, 0,  1, 1, // back
+    0, 0,  1, 1,  0, 1
+  ];
+    // var n = 3; // The number of vertices
+    var n = vertices.length / 3; // The number of vertices
+
+    // if (g_vertexBuffer == null) {
+    //   initTriangle3D();
     // }
-    // assign the buffer object to a_Position variable
-    // instead of calling vertexAttrib (single attribute), we're passing a pointer (the pointer for the buffer we just created)
-    // take buffer we just assigned. assign it to a_Position pointer, which points to the a_Position GLSL var
-    // the 2 means we have 2 elements per vertex (x, y per vertex)
-    // the two 0s are for offset and stride (for using interleave) but IGNORE IT
-    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0); // change to 3 for 3D--tells how many things are passed per pass-through of the vertex shader
+
+    // Create a buffer object
+  // to pass the vertices to the gpu
+  var vertexBuffer = gl.createBuffer(); // make a buffer on the gpu
+  if (!vertexBuffer) {
+    console.log('Failed to create the buffer object');
+    return -1;
+  }
+
+  // Bind the buffer object to target
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   
-    // Enable the assignment to a_Position variable
-    gl.enableVertexAttribArray(a_Position);
+  // Write data into the buffer object
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
+
+  // assign the buffer object to a_Position variable
+  gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0); // change to 3 for 3D--tells how many things are passed per pass-through of the vertex shader
     
+  // Enable the assignment to a_Position variable
+  gl.enableVertexAttribArray(a_Position);
+
+  
+  var uvBuffer = gl.createBuffer(); // make a buffer on the gpu
+  if (!uvBuffer) {
+    console.log('Failed to create the buffer object');
+    return -1;
+  }
+
+  // Bind the buffer object to target
+  gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+  
+  // Write data into the buffer object
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.DYNAMIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
+
+  // assign the buffer object to a_UV variable
+  gl.vertexAttribPointer(a_UV, 2, gl.FLOAT, false, 0, 0); // change to 3 for 3D--tells how many things are passed per pass-through of the vertex shader
+    
+  // Enable the assignment to a_UV variable
+  gl.enableVertexAttribArray(a_UV);
+   
     gl.drawArrays(gl.TRIANGLES, 0, n); // passing 3 vertices into this buffer obj
     // gl.drawArrays(gl.POINTS, 0, n); // this gives the 3 vertices as points every time we draw a triangle!
   //   return n;
@@ -201,4 +269,6 @@ function drawTriangle3DUV(vertices, uv) { // video didnt do this but i added gl 
     gl.drawArrays(gl.TRIANGLES, 0, n); // passing 3 vertices into this buffer obj
     // gl.drawArrays(gl.POINTS, 0, n); // this gives the 3 vertices as points every time we draw a triangle!
   //   return n;
-  }
+
+  g_vertexBuffer = null;
+}

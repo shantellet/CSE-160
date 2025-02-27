@@ -30,29 +30,29 @@ class Camera {
 		);
 	}
 
-	moveForward() {
+	moveForward(speedMultiplier) {
 		let f = new Vector3();
 		f.set(this.at);
 		f.sub(this.eye);
 		f.normalize();
-		f.mul(0.5);
+		f.mul(speedMultiplier);
 		this.eye.add(f);
 		this.at.add(f);
 		this.renderCamera();
 	}
 
-	moveBackward() {
+	moveBackward(speedMultiplier) {
 		let f = new Vector3();
 		f.set(this.at);
 		f.sub(this.eye);
 		f.normalize();
-		f.mul(0.5);
+		f.mul(speedMultiplier);
 		this.eye.sub(f);
 		this.at.sub(f);
 		this.renderCamera();
 	}
 
-	moveLeft() {
+	moveLeft(speedMultiplier) {
 		let f = new Vector3();
 		f.set(this.at);
 		f.sub(this.eye);
@@ -60,13 +60,13 @@ class Camera {
 		let s = new Vector3();
 		s = Vector3.cross(this.up, f);
 		s.normalize();
-		s.mul(0.5);
+		s.mul(speedMultiplier);
 		this.eye.add(s);
 		this.at.add(s);
 		this.renderCamera();
 	}
 
-	moveRight() {
+	moveRight(speedMultiplier) {
 		let f = new Vector3();
 		f.set(this.at);
 		f.sub(this.eye);
@@ -75,7 +75,7 @@ class Camera {
 		let s = new Vector3();
 		s = Vector3.cross(f, this.up);
 		s.normalize();
-		s.mul(0.5);
+		s.mul(speedMultiplier);
 		this.eye.add(s);
 		this.at.add(s);
 		this.renderCamera();

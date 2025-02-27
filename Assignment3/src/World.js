@@ -25,6 +25,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler0; // a sampler is a texture that we'll look up from
   uniform sampler2D u_Sampler1;
   uniform sampler2D u_Sampler2;
+  uniform sampler2D u_Sampler3;
   uniform int u_whichTexture;
   void main() {
     if (u_whichTexture == -2) {
@@ -41,6 +42,9 @@ var FSHADER_SOURCE = `
     }
     else if (u_whichTexture == 2) {  // Use texture2
       gl_FragColor = texture2D(u_Sampler2, v_UV);
+    }
+    else if (u_whichTexture == 3) {  // Use texture3
+      gl_FragColor = texture2D(u_Sampler3, v_UV);
     }
     else {                           // Error, put Redish
       gl_FragColor = vec4(1, 0.2, 0.2, 1);
@@ -63,6 +67,7 @@ let u_ProjectionMatrix;
 let u_Sampler0;
 let u_Sampler1;
 let u_Sampler2;
+let u_Sampler3;
 let u_whichTexture;
 
 function setupWebGL() {
@@ -156,6 +161,13 @@ function connectVariablesToGLSL() {
     return false;
   }
 
+  // Get the storage location of u_Sampler3
+  u_Sampler3 = gl.getUniformLocation(gl.program, 'u_Sampler3');
+  if (!u_Sampler3) {
+    console.log('Failed to get the storage location of u_Sampler3');
+    return false;
+  }
+
   // Get the storage location of u_whichTexture
   u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
   if (!u_whichTexture) {
@@ -170,7 +182,7 @@ function connectVariablesToGLSL() {
 
 let g_selectedColor = [1.0,1.0,1.0,1.0];
 
-let g_xGlobalAngle = -35;
+let g_xGlobalAngle = 0;
 let g_yGlobalAngle = 0;
 
 let g_earAngle = 0;
@@ -206,7 +218,7 @@ function addActionsForHtmlUI() {
   // document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
 
   document.getElementById('xAngleSlide').addEventListener('mousemove', function() { g_xGlobalAngle = parseInt(this.value); renderScene(); });
-  document.getElementById('yAngleSlide').addEventListener('mousemove', function() { g_yGlobalAngle = parseInt(this.value); renderScene(); });
+  // document.getElementById('yAngleSlide').addEventListener('mousemove', function() { g_yGlobalAngle = parseInt(this.value); renderScene(); });
   // document.getElementById('zAngleSlide').addEventListener('input', function() { g_zGlobalAngle = this.value; renderScene(); });
 
   canvas.onmousedown = startDragging;
@@ -243,7 +255,16 @@ function initTextures() {
   }
   // Register the event handler to be called on loading an image
   image2.onload = function() { sendTextureToTEXTURE2(image2); }
-  image2.src = './sky.jpg';
+  image2.src = './volcano_floor.png';
+
+  var image3 = new Image(); // Create the image object
+  if (!image3) {
+    console.log('Failed to create the image3 object');
+    return false;
+  }
+  // Register the event handler to be called on loading an image
+  image3.onload = function() { sendTextureToTEXTURE3(image3); }
+  image3.src = './trak_bricks1_y.jpg';
 
   return true;
 }
@@ -313,6 +334,25 @@ function sendTextureToTEXTURE2(image) {
   console.log('finished loadTexture');
 }
 
+function sendTextureToTEXTURE3(image) {
+  var texture3 = gl.createTexture(); // Create a texture object
+  if (!texture3) {
+    console.log('Failed to create the texture3 object');
+    return false;
+  }
+
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
+  gl.activeTexture(gl.TEXTURE3);
+  gl.bindTexture(gl.TEXTURE_2D, texture3);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+  gl.uniform1i(u_Sampler3, 3);
+
+  console.log('finished loadTexture');
+}
+
 let dragging = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
@@ -348,7 +388,7 @@ function handleDragging(ev) {
       g_xGlobalAngle += deltaX;
       g_yGlobalAngle += deltaY;
       document.getElementById('xAngleSlide').value = g_xGlobalAngle;
-      document.getElementById('yAngleSlide').value = g_yGlobalAngle;
+      // document.getElementById('yAngleSlide').value = g_yGlobalAngle;
 
       renderScene();
     }
@@ -363,10 +403,11 @@ function main() {
   // Set up GLSL shader programs and connect GLSL variables
   connectVariablesToGLSL();
 
-  camera = new Camera();    
-  
   addActionsForHtmlUI();
 
+  camera = new Camera();
+  camera.renderCamera();  
+  
   // Register function (event handler) to be called on a mouse press
   // canvas.onmousedown = click;
   // canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) } }; // want to draw when move mouse with mouse pressed
@@ -386,27 +427,39 @@ function main() {
   requestAnimationFrame(tick); // requet the initial animation frame at the beginning of main, which will get everything started. now this will run automatically.
 }
 
+let speedMultiplier = 0.1;
+let fastSpeedMultiplier = 0.2; // double the speed
+let isFastMode = false;
+
 function keydown(ev) {
+  let currentSpeed = isFastMode ? fastSpeedMultiplier : speedMultiplier;
+
   if (ev.keyCode == 87) { // w
-    camera.moveForward();
-  }
-  else if (ev.keyCode == 83) { // s
-    camera.moveBackward();
-  }
-  else if (ev.keyCode == 65) { // a
-    camera.moveLeft();
-  }
-  else if (ev.keyCode == 68){ // d
-    camera.moveRight();
-  }
-  else if (ev.keyCode == 81) { // q
+    camera.moveForward(currentSpeed);
+  } else if (ev.keyCode == 83) { // s
+    camera.moveBackward(currentSpeed);
+  } else if (ev.keyCode == 65) { // a
+    camera.moveLeft(currentSpeed);
+  } else if (ev.keyCode == 68) { // d
+    camera.moveRight(currentSpeed);
+  } else if (ev.keyCode == 81) { // q
     camera.panLeft();
-  }
-  else if (ev.keyCode == 69) { // e
+  } else if (ev.keyCode == 69) { // e
     camera.panRight();
+  } else if (ev.keyCode == 82) { // r
+    console.log("add block function called");
+    addBlock();
+  } else if (ev.keyCode == 70) { // f
+    console.log("delete block function called");
+    deleteBlock();
+  } else if (ev.keyCode == 32) { // spacebar
+    ev.preventDefault(); // prevent scrolling page when press spacebar
+    isFastMode = !isFastMode;
+    console.log("fast mode toggled:", isFastMode);
   }
-  
+
   renderScene();
+  camera.renderCamera();
   console.log(ev.keyCode);
 }
 
@@ -482,40 +535,76 @@ function click(ev) {
 }
 
 var g_map = [ // 1 = wall, 0 = no wall
-//1 2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 1
+//0 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 0
+[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], // 1
 [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], // 2
-[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], // 3
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 4
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 5
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 6
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 7
-[1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 8
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 9
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 10
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 11
-[1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 12
-[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1], // 13
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 3
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 4
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 5
+[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 6
+[1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 7
+[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 8
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 9
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 10
+[1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 11
+[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1], // 12
+[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 13
 [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 14
-[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 15
-[1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 16
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], // 17
+[1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 15
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], // 16
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 17
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 18
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 19
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 20
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 21
-[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], // 22
-[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 23
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 20
+[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], // 21
+[1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 22
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 23
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 24
 [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 25
-[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 26
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], // 27
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 28
+[1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], // 26
+[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 27
+[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 28
 [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 29
 [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 30
-[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 31
-[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 32
+[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 31
 ];
+
+var g_kibbleMap = [ // 1 = wall, 0 = no wall, 2 = kibble
+  //0 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 0
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], // 1
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1], // 2
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 3
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 4
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 5
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1], // 6
+  [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 7
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 8
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1], // 9
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1], // 10
+  [1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1], // 11
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1], // 12
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 13
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 0, 2, 0, 2, 0, 0, 0, 1], // 14
+  [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 15
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1], // 16
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 17
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 18
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 1], // 19
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1], // 20
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1], // 21
+  [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1], // 22
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1], // 23
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 1], // 24
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 25
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], // 26
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1], // 27
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 28
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 29
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 30
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 31
+  ];
 
 // function drawMap() {
 //   for (x = 0; x < 33; x++) {
@@ -532,25 +621,94 @@ var g_map = [ // 1 = wall, 0 = no wall
 // }
 
 function drawMap() {
-  // for (i = 0; i < 2; i++) {
     for (x = 0; x < 32; x++) {
       for (y = 0; y < 32; y++) {
-        if (g_map[x][y] == 1) {
-          var wall = new Cube(); // create a cube to represent the wall
-          wall.textureNum = 1;
-  // console.log(x, y);
-        // if (x == 0 || x == 31 || y == 0 || y == 31) { // hardcoding boundaries of the box for now
-          wall.color = [0.8, 1.0, 1.0, 1.0];
-          wall.matrix.translate(0, -0.75, 0);
-          wall.matrix.scale(0.4, 0.4, 0.4);
-          wall.matrix.translate(x - 16, 0, y - 16); // move wall to right place
-          // wall.render();
-          wall.renderfaster();
+        if (g_map[x][y] >= 1) {
+          for (i = 0; i < g_map[x][y]; i++) {
+            var wall = new Cube(); // create a cube to represent kibble
+            wall.textureNum = 1;
+    // console.log(x, y);
+          // if (x == 0 || x == 31 || y == 0 || y == 31) { // hardcoding boundaries of the box for now
+            wall.color = [0.8, 1.0, 1.0, 1.0];
+            // wall.matrix.translate(0, -0.75, 0);
+            // wall.matrix.scale(0.4, 0.4, 0.4);
+            wall.matrix.translate(x - 16, i - 0.75, y - 16); // move wall to right place
+            // wall.render();
+            wall.renderfaster();
+          }
         }
       }
     }
-  // }
 }
+
+function drawkibbleMap() {
+  for (x = 0; x < 32; x++) {
+    for (y = 0; y < 32; y++) {
+      if (g_kibbleMap[x][y] >= 2) {
+        for (i = 0; i < g_kibbleMap[x][y] - 1; i++) {
+          var kibble = new Cube(); // create a cube to represent the kibble
+          kibble.textureNum = 3;
+  // console.log(x, y);
+        // if (x == 0 || x == 31 || y == 0 || y == 31) { // hardcoding boundaries of the box for now
+          kibble.color = [0.5, 0.3, 0.2, 1.0];
+          // kibble.matrix.translate(0, -0.75, 0);
+          // kibble.matrix.scale(0.4, 0.4, 0.4);
+          kibble.matrix.translate(x - 16, i - 0.75, y - 16); // move kibble to right place
+          // kibble.render();
+          kibble.matrix.scale(0.3, 0.2, 0.3)
+          kibble.renderfaster();
+        }
+      }
+    }
+  }
+}
+
+function addBlock() {
+  let f = new Vector3();
+  f.set(camera.at);
+  f.sub(camera.eye);
+  f.normalize();
+  f.mul(3);
+  let g = new Vector3();
+  g.set(camera.eye);
+  g.add(f);
+
+  let x = Math.floor(g.elements[0]) + 16;
+  let z = Math.floor(g.elements[2]) + 16;
+  let y = -0.75; // Default y level
+
+  // Check for existing blocks and adjust y
+  for (let i = 0; i < g_map.length; i++) {
+      if (g_map[x][z] > 0) { // If a block exists
+          y += 1; // Increment y to stack on top
+          break; // Stop checking after finding the first block
+      }
+  }
+
+  g_map[x][z] += 1; // Increment the map value to represent a block
+  renderScene();
+}
+
+function deleteBlock() {
+  let f = new Vector3();
+  f.set(camera.at);
+  f.sub(camera.eye);
+  f.normalize();
+  f.mul(3);
+  let g = new Vector3();
+  g.set(camera.eye);
+  g.add(f);
+
+  let x = Math.floor(g.elements[0]) + 16;
+  let z = Math.floor(g.elements[2]) + 16;
+
+  // Find the topmost block
+  if (g_map[x][z] > 0) {
+      g_map[x][z] -= 1; // Decrement the map value
+  }
+  renderScene();
+}
+
 
 // Extract the event click adn return it in WebGL coordinates
 // function convertCoordinatesEventToGL(ev) {
@@ -570,108 +728,22 @@ function drawMap() {
 // var g_at = [0,0,-100];
 // var g_up = [0,1,0];
 
-// Draw every shape that is supposed to be in the canvas
-function renderScene() {
+function renderDog() {
 
-  // Check the time at the start of this function
-  var startTime = performance.now();
-
-  // Pass the projection matrix
-  // var projMat = new Matrix4();
-  var projMat = camera.projMat;
-  // projMat.setPerspective(50, 1*canvas.width / canvas.height, 0.1, 100); // 90 deg wide, aspect width/height = 1, near plane is 0.1 (pretty close) and far plane is 100 so we have a wide perspective
-  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
-
-  // Pass the view matrix
-  // var viewMat = new Matrix4();
-  var viewMat = camera.viewMat;
-  // viewMat.setLookAt(0,0,3, 0,0,-100, 0,1,0); // (eye, at, up)
-  // viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
-  gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
-
-  var globalRotMat = new Matrix4();
-  globalRotMat.rotate(g_xGlobalAngle, 0, 1, 0);
-  globalRotMat.rotate(g_yGlobalAngle, 1, 0, 0);
-  // globalRotMat.rotate(g_zGlobalAngle, 0, 0, 1);
-  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
-
-  // // Pass the matrix to u_ModelMatrix attribute
-  // var globalXRotMat = new Matrix4().rotate(g_xGlobalAngle, 0, 1, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
-  // var globalYRotMat = new Matrix4().rotate(g_yGlobalAngle, 1, 0, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
-  
-  // var combinedRotMat = globalXRotMat.multiply(globalYRotMat);
-  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, combinedRotMat.elements); // pass elements to the matrix
-
-  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalXRotMat.elements); // pass elements to the matrix
-
-  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalYRotMat.elements); // pass elements to the matrix
-
-  // Clear <canvas>
-  // clear the DEPTH_BUFFER when you clear your screen
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  drawMap();
-
-
-  // Draw the floor
-  var body = new Cube(); //
-  body.color = [1, 0, 0, 1];
-  body.textureNum = 0;
-  body.matrix.translate(0, -0.75, 0.0);
-  body.matrix.scale(10, 0, 10); // then scale x by 10 and y by 0 to make it into a flat plane
-  body.matrix.translate(-0.5, 0, -0.5); // box starts out betwen 0 and 1 so move to center first
-  // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
-  body.render();
-
-  // Draw the sky
-  var sky = new Cube();
-  sky.color = [1, 0, 0, 1];
-  sky.textureNum = 2; // change to 1 later
-  sky.matrix.scale(50,50,50);
-  sky.matrix.translate(-0.5, -0.5, -0.5);
-  sky.render();
-
-  
   var body = new Cube(); // body of animal
   // body.color = [1, 1, 0, 1];
-  body.textureNum = 0;
-  body.matrix.setTranslate(-0.4, -0.3, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
+  // body.textureNum = 0;
+  body.matrix.setTranslate(14, 0, 3);
+  body.matrix.translate(-0.4, -0.3, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
   body.matrix.rotate(0, 1, 0, 0);
   body.matrix.scale(1, 0.5, 0.5);
   body.matrix.translate(0, 0, 0.001);
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
   body.render();
 
-  // var thigh1 = new Cube(); // thigh1 of animal
-  // thigh1.color = [1, 0, 0, 1];
-  // thigh1.matrix.setTranslate(-0.4, -0.3, 0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
-  // thigh1.matrix.rotate(g_thigh1Angle, 1, 0, 0);
-  // var thigh1CoordinatesMat = new Matrix4(thigh1.matrix);
-  // thigh1.matrix.scale(0.15, -0.3, 0.5);
-  // // thigh1.matrix.translate(-0.5, -0.5, -0.3); // use setTranslate instead of translate because translate assumes we start with an identity matrix
-  // // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
-  // thigh1.render();
-
-  // var calf1 = new Cube(); // calf1 of animal
-  // calf1.color = [1, 1, 1, 1];
-  // calf1.matrix = thigh1CoordinatesMat;
-  // calf1.matrix.setTranslate(-0.5, -0.5, -0.3); // use setTranslate instead of translate because translate assumes we start with an identity matrix
-  // calf1.matrix.rotate(0, 1, 0, 0);
-  // calf1.matrix.scale(0.15, 0.3, 0.5);
-  // // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
-  // calf1.render();
-
-  // var foot1 = new Cube(); // foot1 of animal
-  // foot1.color = [1, 1, 0, 1];
-  // foot1.matrix.setTranslate(-0.5, -0.9, -0.3); // use setTranslate instead of translate because translate assumes we start with an identity matrix
-  // foot1.matrix.rotate(0, 1, 0, 0);
-  // foot1.matrix.scale(0.15, 0.3, 0.5);
-  // // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
-  // foot1.render();
-
   // neck
   var neck = new Cube();
+  neck.matrix.setTranslate(14, 0, 3);
   // neck.color = [1, 1, 0, 1];
   neck.matrix.translate(-0.5, 0, 0.1);
   neck.matrix.rotate(-45, 0, 0, 1);
@@ -734,6 +806,7 @@ function renderScene() {
   // want a function that lets us update the state of the angles but does not immediately flash back to the last thing on the slider
   // frontThigh1
   var frontThigh1 = new Cube();
+  frontThigh1.matrix.setTranslate(14, 0, 3);
   // frontThigh1.color = [1, 1, 0, 1];
   frontThigh1.matrix.translate(-0.2, 0, 0.01);
   // frontThigh1.matrix.rotate(-5, 1, 0, 0);
@@ -769,6 +842,7 @@ function renderScene() {
 
   // frontThigh2
   var frontThigh2 = new Cube();
+  frontThigh2.matrix.setTranslate(14, 0, 3);
   // frontThigh2.color = [1, 1, 0, 1];
   frontThigh2.matrix.translate(-0.2, 0, 0.27);
   // frontThigh2.matrix.rotate(-5, 1, 0, 0);
@@ -804,6 +878,7 @@ function renderScene() {
 
   // backThigh1
   var backThigh1 = new Cube();
+  backThigh1.matrix.setTranslate(14, 0, 3);
   // backThigh1.color = [1, 1, 0, 1];
   backThigh1.matrix.translate(0.4, 0, 0.0);
   // backThigh1.matrix.rotate(-5, 1, 0, 0);
@@ -839,6 +914,7 @@ function renderScene() {
 
   // backThigh2
   var backThigh2 = new Cube();
+  backThigh2.matrix.setTranslate(14, 0, 3);
   // backThigh2.color = [1, 1, 0, 1];
   backThigh2.matrix.translate(0.4, 0, 0.27);
   // backThigh2.matrix.rotate(-5, 1, 0, 0);
@@ -874,6 +950,7 @@ function renderScene() {
 
   // tail1
   var tail1 = new Cube();
+  tail1.matrix.setTranslate(14, 0, 3);
   // tail1.color = [1, 0.5, 0.5, 1];
   tail1.matrix.translate(0.53, 0.1, 0.3);
   tail1.matrix.rotate(45, 0, 0, 1);
@@ -885,6 +962,72 @@ function renderScene() {
   tail1.matrix.scale(0.1, -0.1, 0.6);
   tail1.matrix.translate(-0.5, 0, 0);
   tail1.render();
+}
+
+// Draw every shape that is supposed to be in the canvas
+function renderScene() {
+
+  // Check the time at the start of this function
+  var startTime = performance.now();
+
+  // Pass the projection matrix
+  // var projMat = new Matrix4();
+  var projMat = camera.projMat;
+  // projMat.setPerspective(50, 1*canvas.width / canvas.height, 0.1, 100); // 90 deg wide, aspect width/height = 1, near plane is 0.1 (pretty close) and far plane is 100 so we have a wide perspective
+  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
+
+  // Pass the view matrix
+  // var viewMat = new Matrix4();
+  var viewMat = camera.viewMat;
+  // viewMat.setLookAt(0,0,3, 0,0,-100, 0,1,0); // (eye, at, up)
+  // viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
+  gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
+
+  var globalRotMat = new Matrix4();
+  globalRotMat.rotate(g_xGlobalAngle, 0, 1, 0);
+  // globalRotMat.rotate(g_yGlobalAngle, 1, 0, 0);
+  // globalRotMat.rotate(g_zGlobalAngle, 0, 0, 1);
+  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
+
+  // // Pass the matrix to u_ModelMatrix attribute
+  // var globalXRotMat = new Matrix4().rotate(g_xGlobalAngle, 0, 1, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
+  // var globalYRotMat = new Matrix4().rotate(g_yGlobalAngle, 1, 0, 0); // what we get from slider is just an angle, so we're going to use a matrix and call rotate to turn this angle into an actual matrix
+  
+  // var combinedRotMat = globalXRotMat.multiply(globalYRotMat);
+  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, combinedRotMat.elements); // pass elements to the matrix
+
+  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalXRotMat.elements); // pass elements to the matrix
+
+  // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalYRotMat.elements); // pass elements to the matrix
+
+  // Clear <canvas>
+  // clear the DEPTH_BUFFER when you clear your screen
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  drawMap();
+  drawkibbleMap();
+
+  renderDog();
+
+
+  // Draw the floor
+  var floor = new Cube(); //
+  floor.color = [1, 0, 0, 1];
+  floor.textureNum = 0;
+  floor.matrix.translate(0, -0.75, 0.0);
+  floor.matrix.scale(32, 0, 32); // then scale x by 10 and y by 0 to make it into a flat plane
+  floor.matrix.translate(-0.5, 0, -0.5); // box starts out betwen 0 and 1 so move to center first
+  // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
+  floor.renderfaster();
+
+  // Draw the sky
+  var sky = new Cube();
+  sky.color = [1, 0, 0, 1];
+  sky.textureNum = 2;
+  sky.matrix.scale(100,100,100);
+  sky.matrix.translate(-0.5, -0.5, -0.5);
+  sky.renderfaster();
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;

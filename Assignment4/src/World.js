@@ -34,6 +34,7 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler3;
   uniform int u_whichTexture;
   uniform vec3 u_lightPos;
+  uniform vec3 u_cameraPos;
   varying vec4 v_vertPos;
   void main() {
     if (u_whichTexture == -3) {
@@ -61,14 +62,38 @@ var FSHADER_SOURCE = `
       gl_FragColor = vec4(1, 0.2, 0.2, 1);
     }
     
-    vec3 lightVector = vec3(v_vertPos) - u_lightPos;
+    // vec3 lightVector = vec3(v_vertPos) - u_lightPos;
+    vec3 lightVector = u_lightPos - vec3(v_vertPos);
     float r = length(lightVector);
-    if (r < 1.0) {
-      gl_FragColor = vec4(1, 0, 0, 1); // red
-    }
-    else if (r < 2.0) {
-      gl_FragColor = vec4(0, 1, 0, 1); //
-    }
+    // if (r < 1.0) {
+    //   gl_FragColor = vec4(1, 0, 0, 1); // red
+    // }
+    // else if (r < 2.0) {
+    //   gl_FragColor = vec4(0, 1, 0, 1); //
+    // }
+    
+    // Light Falloff Visualization 1/r^2
+    gl_FragColor = vec4(vec3(gl_FragColor) / (r * r), 1);
+
+    // normalize the light vector
+    // N dot L
+    vec3 L = normalize(lightVector);
+    vec3 N = normalize(v_Normal);
+    
+    float nDotL = max(dot(N, L), 0.0);
+
+    // Reflection
+    vec3 R = reflect(-L, N);
+
+    // eye
+    vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
+
+    // Specular
+    float specular = pow(max(dot(E, R), 0.0), 10.0);
+
+    vec3 diffuse = vec3(gl_FragColor) * nDotL * 0.7;
+    vec3 ambient = vec3(gl_FragColor) * 0.3;
+    gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
   }`
 
 
@@ -81,6 +106,7 @@ let a_Position;
 let a_UV;
 let a_Normal;
 let u_lightPos;
+let u_cameraPos;
 let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
@@ -138,6 +164,13 @@ function connectVariablesToGLSL() {
   u_lightPos = gl.getUniformLocation(gl.program, 'u_lightPos');
   if (!u_lightPos) {
     console.log('Failed to get the storage location of u_lightPos');
+    return;
+  }
+
+  // Get the storage location of u_cameraPos
+  u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
+  if (!u_cameraPos) {
+    console.log('Failed to get the storage location of u_cameraPos');
     return;
   }
 
@@ -565,7 +598,7 @@ function updateAnimationAngles() {
     g_tailAngle = (40*Math.sin(4*g_seconds));
   }
 
-  g_lightPos[0] = cos(g_seconds);
+  g_lightPos[0] = 2.3 * Math.cos(g_seconds);
 }
 
 var g_shapesList = []; // list of points
@@ -1057,6 +1090,9 @@ function renderScene() {
   // Pass the light position to GLSL
   gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
 
+  // Pass the camera position to GLSL
+  gl.uniform3f(u_cameraPos, camera.eye.x, camera.eye.y, camera.eye.z);
+
   // drawMap();
   // drawkibbleMap();
 
@@ -1066,7 +1102,7 @@ function renderScene() {
   var light = new Cube();
   light.color = [2, 2, 0, 1]; // bright yellow
   light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
-  light.matrix.scale(0.1, 0.1, 0.1); // then scale x by 10 and y by 0 to make it into a flat plane
+  light.matrix.scale(-0.1, -0.1, -0.1); // then scale x by 10 and y by 0 to make it into a flat plane
   light.matrix.translate(-0.5, -0.5, -0.5); // box starts out betwen 0 and 1 so move to center first
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
   light.render();
@@ -1093,9 +1129,8 @@ function renderScene() {
   // Draw a sphere
   var sphere = new Sphere();
   sphere.color = [1, 0, 0, 1];
-  // sphere.textureNum = 2;
+  sphere.textureNum = 2;
   if (g_normalOn) sphere.textureNum = -3;
-  sphere.matrix.scale(1,1,1); // make negative to flip the cube so the normal faces the right way (since we're looking at the inside of the cube instead of outside)
   sphere.matrix.translate(-0.5, 0.25, -0.5);
   sphere.render();
 

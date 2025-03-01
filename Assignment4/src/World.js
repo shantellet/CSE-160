@@ -36,6 +36,7 @@ var FSHADER_SOURCE = `
   uniform vec3 u_lightPos;
   uniform vec3 u_cameraPos;
   varying vec4 v_vertPos;
+  uniform bool u_lightOn;
   void main() {
     if (u_whichTexture == -3) {
       gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0); // set the object to set the color to whatever the normal is
@@ -86,14 +87,20 @@ var FSHADER_SOURCE = `
     vec3 R = reflect(-L, N);
 
     // eye
-    vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
+    vec3 E = normalize(u_cameraPos - vec3(v_vertPos));
 
     // Specular
-    float specular = pow(max(dot(E, R), 0.0), 10.0);
+    // float specular = pow(max(dot(E, R), 0.0), 10.0);
+    float specular = pow(max(dot(E, R), 0.0), 64.0) * 0.8;
 
     vec3 diffuse = vec3(gl_FragColor) * nDotL * 0.7;
     vec3 ambient = vec3(gl_FragColor) * 0.3;
-    gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+    if (u_lightOn) {
+      gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+    }
+    else {
+      gl_FragColor = vec4(diffuse + ambient, 1.0);
+    }
   }`
 
 
@@ -107,6 +114,7 @@ let a_UV;
 let a_Normal;
 let u_lightPos;
 let u_cameraPos;
+let u_lightOn;
 let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
@@ -171,6 +179,13 @@ function connectVariablesToGLSL() {
   u_cameraPos = gl.getUniformLocation(gl.program, 'u_cameraPos');
   if (!u_cameraPos) {
     console.log('Failed to get the storage location of u_cameraPos');
+    return;
+  }
+
+  // Get the storage location of u_lightOn
+  u_lightOn = gl.getUniformLocation(gl.program, 'u_lightOn');
+  if (!u_lightOn) {
+    console.log('Failed to get the storage location of u_lightOn');
     return;
   }
 
@@ -272,6 +287,7 @@ let g_animation = true;
 let shift = false;
 let g_normalOn = false;
 let g_lightPos = [0, 1, -2];
+let g_lightOn = true;
 
 let camera;
 
@@ -279,6 +295,10 @@ let camera;
 function addActionsForHtmlUI() {
   document.getElementById('normalOn').onclick = function() { g_normalOn = true; };
   document.getElementById('normalOff').onclick = function() { g_normalOn = false; };
+
+  document.getElementById('lightOn').onclick = function() { g_lightOn = true; };
+  document.getElementById('lightOff').onclick = function() { g_lightOn = false; };
+  
   document.getElementById('animationOffButton').onclick = function() { g_animation = false; };
   document.getElementById('animationOnButton').onclick = function() { g_animation = true; };
   // document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation = false; };
@@ -1092,6 +1112,9 @@ function renderScene() {
 
   // Pass the camera position to GLSL
   gl.uniform3f(u_cameraPos, camera.eye.x, camera.eye.y, camera.eye.z);
+
+  // Pass the light status
+  gl.uniform1i(u_lightOn, g_lightOn);
 
   // drawMap();
   // drawkibbleMap();

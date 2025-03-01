@@ -11,13 +11,17 @@ precision mediump float;
   varying vec3 v_Normal;
   varying vec4 v_vertPos;
   uniform mat4 u_ModelMatrix; // add a matrix so we can use it to change where our cube shows up on the screen
+  uniform mat4 u_NormalMatrix;
   uniform mat4 u_GlobalRotateMatrix; // add a slider that lets us rotate the animal around so we can it from all sides. eventually will be a camera action. simulating a camera
   uniform mat4 u_ViewMatrix;
   uniform mat4 u_ProjectionMatrix;
   void main() {
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV; // prevent browser from erroring that you're not using the v_UV variable so i'm deleting v_UV
-    v_Normal = a_Normal;
+    // mat4 NormalMatrix = transpose(inverse(u_ModelMatrix));
+    v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 1)));
+    // v_normal = normalize(vec3(u_ModelMatrix * vec4(a_Normal, 1)));
+    // v_Normal = a_Normal;
     v_vertPos = u_ModelMatrix * a_Position;
   }`
 
@@ -28,10 +32,12 @@ var FSHADER_SOURCE = `
   // varying variable: a_... are variables that come from JS. and they are attributes, so they come by each vertex. so each of the 3 vertices of the triangle will each have a diff UV. need to get that to my fragment shader bc that's where we'll use this info. to pass things from vertex shader to fragment shader, assign them into a varying var. take the same definition and put that in the fragment shader.
   varying vec3 v_Normal;
   uniform vec4 u_FragColor;
+
   uniform sampler2D u_Sampler0; // a sampler is a texture that we'll look up from
   uniform sampler2D u_Sampler1;
   uniform sampler2D u_Sampler2;
   uniform sampler2D u_Sampler3;
+  
   uniform int u_whichTexture;
   uniform vec3 u_lightPos;
   uniform vec3 u_cameraPos;
@@ -117,6 +123,7 @@ let u_cameraPos;
 let u_lightOn;
 let u_FragColor;
 let u_ModelMatrix;
+let u_NormalMatrix;
 let u_GlobalRotateMatrix;
 let u_ViewMatrix;
 let u_ProjectionMatrix;
@@ -200,6 +207,13 @@ function connectVariablesToGLSL() {
   u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
   if (!u_ModelMatrix) {
     console.log('Failed to get the storage location of u_ModelMatrix');
+    return;
+  }
+
+  // Get the storage location of u_NormalMatrix
+  u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+  if (!u_NormalMatrix) {
+    console.log('Failed to get the storage location of u_NormalMatrix');
     return;
   }
   
@@ -835,17 +849,20 @@ function renderDog() {
   var body = new Cube(); // body of animal
   // body.color = [1, 1, 0, 1];
   // body.textureNum = 0;
-  body.matrix.setTranslate(14, 0, 3);
+  // body.matrix.setTranslate(14, 0, 3);
   body.matrix.translate(-0.4, -0.3, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
   body.matrix.rotate(0, 1, 0, 0);
   body.matrix.scale(1, 0.5, 0.5);
   body.matrix.translate(0, 0, 0.001);
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
+  
+  body.normalMatrix.setInverseOf(body.matrix).transpose();
+
   body.render();
 
   // neck
   var neck = new Cube();
-  neck.matrix.setTranslate(14, 0, 3);
+  // neck.matrix.setTranslate(14, 0, 3);
   // neck.color = [1, 1, 0, 1];
   neck.matrix.translate(-0.5, 0, 0.1);
   neck.matrix.rotate(-45, 0, 0, 1);
@@ -908,7 +925,7 @@ function renderDog() {
   // want a function that lets us update the state of the angles but does not immediately flash back to the last thing on the slider
   // frontThigh1
   var frontThigh1 = new Cube();
-  frontThigh1.matrix.setTranslate(14, 0, 3);
+  // frontThigh1.matrix.setTranslate(14, 0, 3);
   // frontThigh1.color = [1, 1, 0, 1];
   frontThigh1.matrix.translate(-0.2, 0, 0.01);
   // frontThigh1.matrix.rotate(-5, 1, 0, 0);
@@ -944,7 +961,7 @@ function renderDog() {
 
   // frontThigh2
   var frontThigh2 = new Cube();
-  frontThigh2.matrix.setTranslate(14, 0, 3);
+  // frontThigh2.matrix.setTranslate(14, 0, 3);
   // frontThigh2.color = [1, 1, 0, 1];
   frontThigh2.matrix.translate(-0.2, 0, 0.27);
   // frontThigh2.matrix.rotate(-5, 1, 0, 0);
@@ -980,7 +997,7 @@ function renderDog() {
 
   // backThigh1
   var backThigh1 = new Cube();
-  backThigh1.matrix.setTranslate(14, 0, 3);
+  // backThigh1.matrix.setTranslate(14, 0, 3);
   // backThigh1.color = [1, 1, 0, 1];
   backThigh1.matrix.translate(0.4, 0, 0.0);
   // backThigh1.matrix.rotate(-5, 1, 0, 0);
@@ -1016,7 +1033,7 @@ function renderDog() {
 
   // backThigh2
   var backThigh2 = new Cube();
-  backThigh2.matrix.setTranslate(14, 0, 3);
+  // backThigh2.matrix.setTranslate(14, 0, 3);
   // backThigh2.color = [1, 1, 0, 1];
   backThigh2.matrix.translate(0.4, 0, 0.27);
   // backThigh2.matrix.rotate(-5, 1, 0, 0);
@@ -1052,7 +1069,7 @@ function renderDog() {
 
   // tail1
   var tail1 = new Cube();
-  tail1.matrix.setTranslate(14, 0, 3);
+  // tail1.matrix.setTranslate(14, 0, 3);
   // tail1.color = [1, 0.5, 0.5, 1];
   tail1.matrix.translate(0.53, 0.1, 0.3);
   tail1.matrix.rotate(45, 0, 0, 1);

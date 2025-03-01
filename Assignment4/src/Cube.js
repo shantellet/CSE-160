@@ -74,8 +74,12 @@ class Cube {
       // drawTriangle3D( [0, 0, 0,  1, 1, 0,  1, 0, 0] );
       // vertex pos 1         2        3      1       2       3 uv coords for each vertices 
       // drawTriangle3DUV( [0, 0, 0,  1, 1, 0,  1, 0, 0], [1, 0,  0, 1,  1, 1] );
-      drawTriangle3DUV( [0, 0, 0,  1, 1, 0,  1, 0, 0], [0, 0,  1, 1,  1, 0] ); // changed uv vals so they span the square. rather than seeing 2 triangles we see smoothly varying UV over the front face of the square
-      drawTriangle3DUV( [0, 0, 0,  0, 1, 0,  1, 1, 0], [0, 0,  0, 1,  1, 1] );
+      drawTriangle3DUVNormal( 
+        [0, 0, 0,  1, 1, 0,  1, 0, 0], 
+        [0, 0,  1, 1,  1, 0], 
+        [0, 0, -1,  0, 0, -1,  0, 0, -1] // for front of cube, normal is pointing back towards me, so in the negative z direction
+      ); // changed uv vals so they span the square. rather than seeing 2 triangles we see smoothly varying UV over the front face of the square
+      drawTriangle3DUVNormal( [0, 0, 0,  0, 1, 0,  1, 1, 0], [0, 0,  0, 1,  1, 1], [0, 0, -1,  0, 0, -1,  0, 0, -1] );
       // drawTriangle3D( [0, 0, 0,  0, 1, 0,  1, 1, 0] );
 
       // Add fake Lighting (differnt amount of light bouncing off each surface). Pass the color of a point to u_FragColor uniform variable
@@ -83,29 +87,29 @@ class Cube {
       // for more sides, they might multiply by a slightly diff num, like 0.8
 
       // Top of cube
-      drawTriangle3DUV([0, 1, 0,  0, 1, 1,  1, 1, 1], [0, 0,  0, 1,  1, 1]);
-      drawTriangle3DUV([0, 1, 0,  1, 1, 1,  1, 1, 0], [0, 0,  1, 1,  1, 0]);
+      drawTriangle3DUVNormal([0, 1, 0,  0, 1, 1,  1, 1, 1], [0, 0,  0, 1,  1, 1], [0,1,0, 0,1,0, 0,1,0]);
+      drawTriangle3DUVNormal([0, 1, 0,  1, 1, 1,  1, 1, 0], [0, 0,  1, 1,  1, 0], [0,1,0, 0,1,0, 0,1,0]);
 
       gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
 
       // Bottom of cube
-      drawTriangle3DUV([0, 0, 0,  1, 0, 0,  0, 0, 1], [0, 0,  1, 0,  0, 1]);
-      drawTriangle3DUV([1, 0, 0,  1, 0, 1,  0, 0, 1], [1, 0,  1, 1,  0, 1]);
+      drawTriangle3DUVNormal([0, 0, 0,  0, 0, 1,  1, 0, 1], [0, 0,  0, 1,  1, 1], [0,-1,0, 0,-1,0, 0,-1,0]);
+      drawTriangle3DUVNormal([0, 0, 0,  1, 0, 1,  1, 0, 1], [0, 0,  1, 1,  1, 0], [0,-1,0, 0,-1,0, 0,-1,0]);
 
       gl.uniform4f(u_FragColor, rgba[0] * 0.8, rgba[1] * 0.8, rgba[2] * 0.8, rgba[3]);
 
       // Left of cube
-      drawTriangle3DUV([0, 0, 0,  0, 1, 0,  0, 0, 1], [0, 0,  0, 1,  1, 0]);
-      drawTriangle3DUV([0, 1, 0,  0, 1, 1,  0, 0, 1], [0, 1,  1, 1,  1, 0]);
+      drawTriangle3DUVNormal([0, 1, 0,  0, 1, 1,  0, 0, 0], [0, 0,  0, 1,  1, 1], [-1,0,0, -1,0,0, -1,0,0]);
+      drawTriangle3DUVNormal([0, 0, 0,  0, 1, 1,  0, 0, 1], [0, 1,  1, 1,  1, 0], [-1,0,0, -1,0,0, -1,0,0]);
 
       // Right of cube
-      drawTriangle3DUV([1, 0, 0,  1, 0, 1,  1, 1, 0], [0, 0,  0, 1,  1, 0]);
-      drawTriangle3DUV([1, 1, 0,  1, 0, 1,  1, 1, 1], [1, 0,  0, 1,  1, 1]);
+      drawTriangle3DUVNormal([1, 1, 0,  1, 1, 1,  1, 0, 0], [0, 0,  0, 1,  1, 1], [1,0,0, 1,0,0, 1,0,0]);
+      drawTriangle3DUVNormal([1, 0, 0,  1, 1, 1,  1, 0, 1], [0, 0,  1, 1,  1, 0], [1,0,0, 1,0,0, 1,0,0]);
       
       gl.uniform4f(u_FragColor, rgba[0] * 0.9, rgba[1] * 0.9, rgba[2] * 0.9, rgba[3]);
       // Back of cube
-      drawTriangle3DUV([0, 0, 1,  1, 0, 1,  1, 1, 1], [0, 0,  1, 0,  1, 1]);
-      drawTriangle3DUV([0, 0, 1,  1, 1, 1,  0, 1, 1], [0, 0,  1, 1,  0, 1]);
+      drawTriangle3DUVNormal([0, 0, 1,  1, 1, 1,  1, 0, 1], [0, 0,  0, 1,  1, 1], [0,0,1, 0,0,1, 0,0,1]);
+      drawTriangle3DUVNormal([0, 0, 1,  0, 1, 1,  1, 1, 1], [0, 0,  1, 1,  0, 1], [0,0,1, 0,0,1, 0,0,1]);
 
     }
     

@@ -1,0 +1,68 @@
+<!-- Shantelle Toh -->
+<!-- shtoh@ucsc.edu -->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Virtual World</title>
+  </head>
+
+  <body onload="main()">
+    <p><b>Shantelle Toh</b></p>
+    <p><a href="mailto:shtoh@ucsc.edu">shtoh@ucsc.edu</b></a></p>
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+    <p>
+
+    <p id="numdot"> XXX </p>
+
+
+    <p>
+     <!-- <input type="range" min="-45" max="45" value="0" class="slider" id="animationSlide"> -->
+
+    Animation:
+    <button type="button" id="animationOnButton">ON</button>
+    <button type="button" id="animationOffButton">OFF</button>
+
+    <p>
+    <!-- Yellow <input type="range" min="-45" max="45" value="0" class="slider" id="yellowSlide">
+
+    Animation:
+    <button type="button" id="animationYellowOnButton">ON</button>
+    <button type="button" id="animationYellowOffButton">OFF</button> -->
+
+    <p>
+    Camera Angle (x-axis) <input type="range" min="-90" max="90" value="0" class="slider" id="xAngleSlide">
+    <p>
+    <!-- Camera Angle (y-axis) <input type="range" min="-90" max="90" value="0" class="slider" id="yAngleSlide"> -->
+    <!-- Camera Angle (z-axis) <input type="range" min="-90" max="90" value="-90" class="slider" id="zAngleSlide"> -->
+
+    <hr>
+
+    <h3>You have entered into a maze with your dog. Your dog ran ahead to scout for a way out and has found the exit. Get to your dog to escape!</h3>
+    <h3>Hint: your dog was eating kibble but was rushing to get to the exit, so he dropped some kibble on the ground. It is very easy to get lost because of the seemingly endless walls. You can stack blocks on top of each other so you know where you have gone already, or remove them to clear your view! Good luck!</h3>
+
+    <h3>Controls</h3>
+    <p>Movement: W, A, S, D</p>
+    <p>Rotation: Q, E, Mouse Drag</p>
+    <p>Move Speed: Toggle Spacebar to move at normal speed or 2x speed</p>
+    <p>Place block: R</p>
+    <P>Remove block: F</P>
+
+    <p>There are 4 textures: volcano skybox, walls of hedges, flagstone floor, and dog kibble. Blocks can be created and stacked on top of each other, as well as removed. They can even be stacked on top of prebuilt walls, and prebuilt walls can be removed. You can also move faster by pressing space.</p>
+    <p>Textures from https://opengameart.org/ and https://www.sketchuptextureclub.com/.</p>
+
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix-cse160.js"></script>
+    <script src="Cube.js"></script>
+    <script src="Triangle.js"></script>
+    <script src="Pyramid.js"></script>
+    <script src="World.js"></script>
+    <script src="camera.js"></script>
+  </body>
+</html>

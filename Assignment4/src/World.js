@@ -564,6 +564,8 @@ function updateAnimationAngles() {
   if (shift) {
     g_tailAngle = (40*Math.sin(4*g_seconds));
   }
+
+  g_lightPos[0] = cos(g_seconds);
 }
 
 var g_shapesList = []; // list of points

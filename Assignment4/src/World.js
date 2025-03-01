@@ -1034,7 +1034,7 @@ function renderScene() {
   floor.color = [1, 0, 0, 1];
   floor.textureNum = 0;
   floor.matrix.translate(0, -0.75, 0.0);
-  floor.matrix.scale(32, 0, 32); // then scale x by 10 and y by 0 to make it into a flat plane
+  floor.matrix.scale(5, 0, 5); // then scale x by 10 and y by 0 to make it into a flat plane
   floor.matrix.translate(-0.5, 0, -0.5); // box starts out betwen 0 and 1 so move to center first
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
   floor.render();
@@ -1044,9 +1044,18 @@ function renderScene() {
   sky.color = [1, 0, 0, 1];
   // sky.textureNum = 2;
   if (g_normalOn) sky.textureNum = -3;
-  sky.matrix.scale(-100,-100,-100); // make negative to flip the cube so the normal faces the right way (since we're looking at the inside of the cube instead of outside)
+  sky.matrix.scale(-5,-5,-5); // make negative to flip the cube so the normal faces the right way (since we're looking at the inside of the cube instead of outside)
   sky.matrix.translate(-0.5, -0.5, -0.5);
   sky.render();
+
+  // Draw a sphere
+  var sphere = new Sphere();
+  sphere.color = [1, 0, 0, 1];
+  // sphere.textureNum = 2;
+  if (g_normalOn) sphere.textureNum = -3;
+  sphere.matrix.scale(1,1,1); // make negative to flip the cube so the normal faces the right way (since we're looking at the inside of the cube instead of outside)
+  sphere.matrix.translate(-0.5, 0.25, -0.5);
+  sphere.render();
 
   // Check the time at the end of the function, and show on web page
   var duration = performance.now() - startTime;

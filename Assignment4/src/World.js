@@ -9,6 +9,7 @@ precision mediump float;
   attribute vec3 a_Normal;
   varying vec2 v_UV;
   varying vec3 v_Normal;
+  varying vec4 v_vertPos;
   uniform mat4 u_ModelMatrix; // add a matrix so we can use it to change where our cube shows up on the screen
   uniform mat4 u_GlobalRotateMatrix; // add a slider that lets us rotate the animal around so we can it from all sides. eventually will be a camera action. simulating a camera
   uniform mat4 u_ViewMatrix;
@@ -17,6 +18,7 @@ precision mediump float;
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV; // prevent browser from erroring that you're not using the v_UV variable so i'm deleting v_UV
     v_Normal = a_Normal;
+    v_vertPos = u_ModelMatrix * a_Position;
   }`
 
 // Fragment shader program
@@ -31,6 +33,8 @@ var FSHADER_SOURCE = `
   uniform sampler2D u_Sampler2;
   uniform sampler2D u_Sampler3;
   uniform int u_whichTexture;
+  uniform vec3 u_lightPos;
+  varying vec4 v_vertPos;
   void main() {
     if (u_whichTexture == -3) {
       gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0); // set the object to set the color to whatever the normal is
@@ -56,6 +60,15 @@ var FSHADER_SOURCE = `
     else {                           // Error, put Redish
       gl_FragColor = vec4(1, 0.2, 0.2, 1);
     }
+    
+    vec3 lightVector = vec3(v_vertPos) - u_lightPos;
+    float r = length(lightVector);
+    if (r < 1.0) {
+      gl_FragColor = vec4(1, 0, 0, 1); // red
+    }
+    else if (r < 2.0) {
+      gl_FragColor = vec4(0, 1, 0, 1); //
+    }
   }`
 
 
@@ -67,6 +80,7 @@ let gl;
 let a_Position;
 let a_UV;
 let a_Normal;
+let u_lightPos;
 let u_FragColor;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
@@ -117,6 +131,13 @@ function connectVariablesToGLSL() {
   a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
   if (a_Normal < 0) {
     console.log('Failed to get the storage location of a_Normal');
+    return;
+  }
+  
+  // Get the storage location of u_lightPos
+  u_lightPos = gl.getUniformLocation(gl.program, 'u_lightPos');
+  if (!u_lightPos) {
+    console.log('Failed to get the storage location of u_lightPos');
     return;
   }
 
@@ -217,6 +238,7 @@ let g_backLeg2Animation = false;
 let g_animation = true;
 let shift = false;
 let g_normalOn = false;
+let g_lightPos = [0, 1, -2];
 
 let camera;
 
@@ -235,9 +257,16 @@ function addActionsForHtmlUI() {
   // document.getElementById('magentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderScene(); });
   // document.getElementById('yellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderScene(); });
 
+  document.getElementById('lightSlideX').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[0] = this.value / 100; renderScene(); }});
+  document.getElementById('lightSlideY').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[1] = this.value / 100; renderScene(); }});
+  document.getElementById('lightSlideZ').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[2] = this.value / 100; renderScene(); }});
+
+
   document.getElementById('xAngleSlide').addEventListener('mousemove', function() { g_xGlobalAngle = parseInt(this.value); renderScene(); });
   // document.getElementById('yAngleSlide').addEventListener('mousemove', function() { g_yGlobalAngle = parseInt(this.value); renderScene(); });
   // document.getElementById('zAngleSlide').addEventListener('input', function() { g_zGlobalAngle = this.value; renderScene(); });
+
+  canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) }};
 
   canvas.onmousedown = startDragging;
   canvas.onmouseup = stopDragging;
@@ -1023,14 +1052,25 @@ function renderScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
+  // Pass the light position to GLSL
+  gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+
   // drawMap();
   // drawkibbleMap();
 
   renderDog();
 
+  // Draw the light
+  var light = new Cube();
+  light.color = [2, 2, 0, 1]; // bright yellow
+  light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+  light.matrix.scale(0.1, 0.1, 0.1); // then scale x by 10 and y by 0 to make it into a flat plane
+  light.matrix.translate(-0.5, -0.5, -0.5); // box starts out betwen 0 and 1 so move to center first
+  // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
+  light.render();
 
   // Draw the floor
-  var floor = new Cube(); //
+  var floor = new Cube();
   floor.color = [1, 0, 0, 1];
   floor.textureNum = 0;
   floor.matrix.translate(0, -0.75, 0.0);

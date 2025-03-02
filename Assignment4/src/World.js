@@ -41,6 +41,7 @@ var FSHADER_SOURCE = `
   uniform vec3 u_cameraPos;
   varying vec4 v_VertPos;
   uniform bool u_lightOn;
+  uniform vec3 u_lightColor;
   void main() {
     if (u_whichTexture == -3) {
       gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0); // set the object to set the color to whatever the normal is
@@ -96,7 +97,7 @@ var FSHADER_SOURCE = `
     float specular = pow(max(dot(E, R), 0.0), 64.0) * 0.8;
 
     vec3 diffuse = vec3(1.0, 1.0, 0.9) * vec3(gl_FragColor) * nDotL * 0.7;
-    vec3 ambient = vec3(gl_FragColor) * 0.2;
+    vec3 ambient = vec3(gl_FragColor) * 0.2 * u_lightColor;
     if (u_lightOn) {
       if (u_whichTexture == 0) {
         gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
@@ -119,6 +120,7 @@ let a_Normal;
 let u_lightPos;
 let u_cameraPos;
 let u_lightOn;
+let u_lightColor;
 let u_FragColor;
 let u_ModelMatrix;
 let u_NormalMatrix;
@@ -191,6 +193,13 @@ function connectVariablesToGLSL() {
   u_lightOn = gl.getUniformLocation(gl.program, 'u_lightOn');
   if (!u_lightOn) {
     console.log('Failed to get the storage location of u_lightOn');
+    return;
+  }
+  
+  // Get the storage location of u_lightColor
+  u_lightColor = gl.getUniformLocation(gl.program, 'u_lightColor');
+  if (!u_lightColor) {
+    console.log('Failed to get the storage location of u_lightColor');
     return;
   }
 
@@ -298,8 +307,9 @@ let g_backLeg2Animation = false;
 let g_animation = true;
 let shift = false;
 let g_normalOn = false;
-let g_lightPos = [0, 1, -2];
+let g_lightPos = [0, 1, 1];
 let g_lightOn = true;
+let g_lightColor = new Vector3([1, 1, 1]);
 
 let camera;
 
@@ -325,6 +335,10 @@ function addActionsForHtmlUI() {
   document.getElementById('lightSlideX').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[0] = this.value / 100; renderScene(); }});
   document.getElementById('lightSlideY').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[1] = this.value / 100; renderScene(); }});
   document.getElementById('lightSlideZ').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[2] = this.value / 100; renderScene(); }});
+
+  document.getElementById('redLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor[0] = this.value / 255; }});
+  document.getElementById('greenLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor[1] = this.value / 255; }});
+  document.getElementById('blueLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor[2] = this.value / 255; }});
 
 
   document.getElementById('xAngleSlide').addEventListener('mousemove', function() { g_xGlobalAngle = parseInt(this.value); renderScene(); });
@@ -401,6 +415,8 @@ function sendTextureToTEXTURE0(image) {
 
   // Set the texture unit 0 to the sampler
   gl.uniform1i(u_Sampler0, 0);
+
+  gl.uniform3f(u_lightColor, g_lightColor.elements[0], g_lightColor.elements[1], g_lightColor.elements[2]);
 
   // gl.clear(gl.COLOR_BUFFER_BIT); // Clear <canvas>
 
@@ -847,7 +863,7 @@ function renderDog() {
   var body = new Cube(); // body of animal
   // body.color = [1, 1, 0, 1];
   // body.textureNum = 0;
-  // body.matrix.setTranslate(14, 0, 3);
+  body.matrix.setTranslate(0.75, 0, -1.3);
   if (g_normalOn) body.textureNum = -3;
   body.matrix.translate(-0.4, -0.3, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
   body.matrix.rotate(0, 1, 0, 0);
@@ -862,6 +878,7 @@ function renderDog() {
   // neck
   var neck = new Cube();
   // neck.matrix.setTranslate(14, 0, 3);
+  neck.matrix.setTranslate(0.75, 0, -1.3);
   // neck.color = [1, 1, 0, 1];
   if (g_normalOn) neck.textureNum = -3;
   neck.matrix.translate(-0.5, 0, 0.1);
@@ -870,6 +887,7 @@ function renderDog() {
   var neckCoordinatesMat = new Matrix4(neck.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   neck.matrix.scale(0.3, 0.3, 0.3);
   neck.matrix.translate(-0.5, 0, 0);
+  neck.normalMatrix.setInverseOf(neck.matrix).transpose();
   neck.render();
 
   // head
@@ -884,6 +902,7 @@ function renderDog() {
   head.matrix.scale(0.3, 0.3, 0.3);
   head.matrix.translate(0, 0, -0.0001);
   // head.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  head.normalMatrix.setInverseOf(head.matrix).transpose();
   head.render();
 
   // ear1
@@ -897,6 +916,7 @@ function renderDog() {
   // ear1.matrix.rotate(-30+g_leg1Angle, 0, 0, 1);
   ear1.matrix.scale(0.15, 0.15, 0.3);
   ear1.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  // ear1.normalMatrix.setInverseOf(ear1.matrix).transpose();
   ear1.render();
 
    // ear2
@@ -910,6 +930,7 @@ function renderDog() {
   // ear2.matrix.rotate(-30+g_leg1Angle, 0, 0, 1);
   ear2.matrix.scale(0.15, 0.15, 0.3);
   ear2.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  // ear2.normalMatrix.setInverseOf(ear2.matrix).transpose();
   ear2.render();
 
   // snout
@@ -922,6 +943,7 @@ function renderDog() {
   // snout.matrix.rotate(-30+g_leg1Angle, 0, 0, 1);
   snout.matrix.scale(0.2, 0.16, 0.3);
   snout.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  // snout.normalMatrix.setInverseOf(snout.matrix).transpose();
   snout.render();
 
 
@@ -931,6 +953,7 @@ function renderDog() {
   var frontThigh1 = new Cube();
   if (g_normalOn) frontThigh1.textureNum = -3;
   // frontThigh1.matrix.setTranslate(14, 0, 3);
+  frontThigh1.matrix.setTranslate(0.75, 0, -1.3);
   // frontThigh1.color = [1, 1, 0, 1];
   frontThigh1.matrix.translate(-0.2, 0, 0.01);
   // frontThigh1.matrix.rotate(-5, 1, 0, 0);
@@ -938,6 +961,7 @@ function renderDog() {
   var frontThigh1CoordinatesMat = new Matrix4(frontThigh1.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   frontThigh1.matrix.scale(0.08, -0.5, 0.22);
   frontThigh1.matrix.translate(-0.5, 0, 0);
+  frontThigh1.normalMatrix.setInverseOf(frontThigh1.matrix).transpose();
   frontThigh1.render();
 
   // frontCalf1
@@ -950,6 +974,7 @@ function renderDog() {
   var frontCalf1CoordinatesMat = new Matrix4(frontCalf1.matrix);
   frontCalf1.matrix.scale(0.08, -0.3, 0.22);
   frontCalf1.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  frontCalf1.normalMatrix.setInverseOf(frontCalf1.matrix).transpose();
   frontCalf1.render();
 
   // frontFoot1
@@ -962,6 +987,7 @@ function renderDog() {
   frontFoot1.matrix.rotate(-40+g_frontLeg1Angle, 0, 0, 1);
   frontFoot1.matrix.scale(0.2, -0.1, 0.22);
   frontFoot1.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  frontFoot1.normalMatrix.setInverseOf(frontFoot1.matrix).transpose();
   frontFoot1.render();
   
 
@@ -970,6 +996,7 @@ function renderDog() {
   var frontThigh2 = new Cube();
   if (g_normalOn) frontThigh2.textureNum = -3;
   // frontThigh2.matrix.setTranslate(14, 0, 3);
+  frontThigh2.matrix.setTranslate(0.75, 0, -1.3);
   // frontThigh2.color = [1, 1, 0, 1];
   frontThigh2.matrix.translate(-0.2, 0, 0.27);
   // frontThigh2.matrix.rotate(-5, 1, 0, 0);
@@ -977,6 +1004,7 @@ function renderDog() {
   var frontThigh2CoordinatesMat = new Matrix4(frontThigh2.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   frontThigh2.matrix.scale(0.08, -0.5, 0.22);
   frontThigh2.matrix.translate(-0.5, 0, 0);
+  frontThigh2.normalMatrix.setInverseOf(frontThigh2.matrix).transpose();
   frontThigh2.render();
 
   // frontCalf2
@@ -989,6 +1017,7 @@ function renderDog() {
   var frontCalf2CoordinatesMat = new Matrix4(frontCalf2.matrix);
   frontCalf2.matrix.scale(0.08, -0.3, 0.22);
   frontCalf2.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  frontCalf2.normalMatrix.setInverseOf(frontCalf2.matrix).transpose();
   frontCalf2.render();
 
   // frontFoot2
@@ -1001,6 +1030,7 @@ function renderDog() {
   frontFoot2.matrix.rotate(-40+g_frontLeg2Angle, 0, 0, 1);
   frontFoot2.matrix.scale(0.2, -0.1, 0.22);
   frontFoot2.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  frontFoot2.normalMatrix.setInverseOf(frontFoot2.matrix).transpose();
   frontFoot2.render();
 
 
@@ -1009,6 +1039,7 @@ function renderDog() {
   var backThigh1 = new Cube();
   if (g_normalOn) backThigh1.textureNum = -3;
   // backThigh1.matrix.setTranslate(14, 0, 3);
+  backThigh1.matrix.setTranslate(0.75, 0, -1.3);
   // backThigh1.color = [1, 1, 0, 1];
   backThigh1.matrix.translate(0.4, 0, 0.0);
   // backThigh1.matrix.rotate(-5, 1, 0, 0);
@@ -1016,6 +1047,7 @@ function renderDog() {
   var backThigh1CoordinatesMat = new Matrix4(backThigh1.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   backThigh1.matrix.scale(0.08, -0.5, 0.22);
   backThigh1.matrix.translate(-0.5, 0, 0);
+  backThigh1.normalMatrix.setInverseOf(backThigh1.matrix).transpose();
   backThigh1.render();
 
   // backCalf1
@@ -1028,6 +1060,7 @@ function renderDog() {
   var backCalf1CoordinatesMat = new Matrix4(backCalf1.matrix);
   backCalf1.matrix.scale(0.08, -0.3, 0.22);
   backCalf1.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  backCalf1.normalMatrix.setInverseOf(backCalf1.matrix).transpose();
   backCalf1.render();
 
   // backFoot1
@@ -1040,6 +1073,7 @@ function renderDog() {
   backFoot1.matrix.rotate(-40+g_backLeg1Angle, 0, 0, 1);
   backFoot1.matrix.scale(0.2, -0.1, 0.22);
   backFoot1.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  backFoot1.normalMatrix.setInverseOf(backFoot1.matrix).transpose();
   backFoot1.render();
 
 
@@ -1048,6 +1082,7 @@ function renderDog() {
   var backThigh2 = new Cube();
   if (g_normalOn) backThigh2.textureNum = -3;
   // backThigh2.matrix.setTranslate(14, 0, 3);
+  backThigh2.matrix.setTranslate(0.75, 0, -1.3);
   // backThigh2.color = [1, 1, 0, 1];
   backThigh2.matrix.translate(0.4, 0, 0.27);
   // backThigh2.matrix.rotate(-5, 1, 0, 0);
@@ -1055,6 +1090,7 @@ function renderDog() {
   var backThigh2CoordinatesMat = new Matrix4(backThigh2.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   backThigh2.matrix.scale(0.08, -0.5, 0.22);
   backThigh2.matrix.translate(-0.5, 0, 0);
+  backThigh2.normalMatrix.setInverseOf(backThigh2.matrix).transpose();
   backThigh2.render();
 
   // backCalf2
@@ -1067,6 +1103,7 @@ function renderDog() {
   var backCalf2CoordinatesMat = new Matrix4(backCalf2.matrix);
   backCalf2.matrix.scale(0.08, -0.3, 0.22);
   backCalf2.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  backCalf2.normalMatrix.setInverseOf(backCalf2.matrix).transpose();
   backCalf2.render();
 
   // backFoot2
@@ -1079,6 +1116,7 @@ function renderDog() {
   backFoot2.matrix.rotate(-40+g_backLeg2Angle, 0, 0, 1);
   backFoot2.matrix.scale(0.2, -0.1, 0.22);
   backFoot2.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
+  backFoot2.normalMatrix.setInverseOf(backFoot2.matrix).transpose();
   backFoot2.render();
 
 
@@ -1087,6 +1125,7 @@ function renderDog() {
   var tail1 = new Cube();
   if (g_normalOn) tail1.textureNum = -3;
   // tail1.matrix.setTranslate(14, 0, 3);
+  tail1.matrix.setTranslate(0.75, 0, -1.3);
   // tail1.color = [1, 0.5, 0.5, 1];
   tail1.matrix.translate(0.53, 0.1, 0.3);
   tail1.matrix.rotate(45, 0, 0, 1);
@@ -1097,6 +1136,7 @@ function renderDog() {
   var tail1CoordinatesMat = new Matrix4(tail1.matrix); // store an intermediate matrix. the below scale and translate are for the size while the above are about moving the box. but even with this, the next box is still getting the scaling. this is bc javascript passes by pointer for complex objects, unless u do something otherwise. so to force it to make a copy, create a new matrix
   tail1.matrix.scale(0.1, -0.1, 0.6);
   tail1.matrix.translate(-0.5, 0, 0);
+  tail1.normalMatrix.setInverseOf(tail1.matrix).transpose();
   tail1.render();
 }
 
@@ -1168,6 +1208,7 @@ function renderScene() {
   var floor = new Cube();
   floor.color = [1, 0, 0, 1];
   floor.textureNum = 0;
+  if (g_normalOn) floor.textureNum = -3;
   floor.matrix.translate(0, -0.75, 0.0);
   floor.matrix.scale(5, 0, 5); // then scale x by 10 and y by 0 to make it into a flat plane
   floor.matrix.translate(-0.5, 0, -0.5); // box starts out betwen 0 and 1 so move to center first
@@ -1177,7 +1218,7 @@ function renderScene() {
   // Draw the sky
   var sky = new Cube();
   sky.color = [1, 0, 0, 1];
-  // sky.textureNum = 2;
+  sky.textureNum = 1;
   if (g_normalOn) sky.textureNum = -3;
   sky.matrix.scale(-5,-5,-5); // make negative to flip the cube so the normal faces the right way (since we're looking at the inside of the cube instead of outside)
   sky.matrix.translate(-0.5, -0.5, -0.5);
@@ -1186,10 +1227,10 @@ function renderScene() {
   // Draw a sphere
   var sphere = new Sphere();
   sphere.color = [1, 0, 0, 1];
-  sphere.textureNum = 2;
+  sphere.textureNum = 0;
   if (g_normalOn) sphere.textureNum = -3;
   sphere.matrix.scale(0.5, 0.5, 0.5);
-  sphere.matrix.translate(-0.5, 0.25, -0.5);
+  sphere.matrix.translate(-2.0, 0.25, -1.3);
   sphere.render();
 
   // Check the time at the end of the function, and show on web page

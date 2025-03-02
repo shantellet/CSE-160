@@ -9,7 +9,7 @@ precision mediump float;
   attribute vec3 a_Normal;
   varying vec2 v_UV;
   varying vec3 v_Normal;
-  varying vec4 v_vertPos;
+  varying vec4 v_VertPos;
   uniform mat4 u_ModelMatrix; // add a matrix so we can use it to change where our cube shows up on the screen
   uniform mat4 u_NormalMatrix;
   uniform mat4 u_GlobalRotateMatrix; // add a slider that lets us rotate the animal around so we can it from all sides. eventually will be a camera action. simulating a camera
@@ -18,11 +18,9 @@ precision mediump float;
   void main() {
     gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
     v_UV = a_UV; // prevent browser from erroring that you're not using the v_UV variable so i'm deleting v_UV
-    // mat4 NormalMatrix = transpose(inverse(u_ModelMatrix));
+
     v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 1)));
-    // v_normal = normalize(vec3(u_ModelMatrix * vec4(a_Normal, 1)));
-    // v_Normal = a_Normal;
-    v_vertPos = u_ModelMatrix * a_Position;
+    v_VertPos = u_ModelMatrix * a_Position;
   }`
 
 // Fragment shader program
@@ -41,13 +39,13 @@ var FSHADER_SOURCE = `
   uniform int u_whichTexture;
   uniform vec3 u_lightPos;
   uniform vec3 u_cameraPos;
-  varying vec4 v_vertPos;
+  varying vec4 v_VertPos;
   uniform bool u_lightOn;
   void main() {
     if (u_whichTexture == -3) {
       gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0); // set the object to set the color to whatever the normal is
     }
-    if (u_whichTexture == -2) {
+    else if (u_whichTexture == -2) {
       gl_FragColor = u_FragColor;    // Use color
     }
     else if (u_whichTexture == -1) { // Use UV debug color
@@ -69,8 +67,7 @@ var FSHADER_SOURCE = `
       gl_FragColor = vec4(1, 0.2, 0.2, 1);
     }
     
-    // vec3 lightVector = vec3(v_vertPos) - u_lightPos;
-    vec3 lightVector = u_lightPos - vec3(v_vertPos);
+    vec3 lightVector = u_lightPos - vec3(v_VertPos);
     float r = length(lightVector);
     // if (r < 1.0) {
     //   gl_FragColor = vec4(1, 0, 0, 1); // red
@@ -80,32 +77,33 @@ var FSHADER_SOURCE = `
     // }
     
     // Light Falloff Visualization 1/r^2
-    gl_FragColor = vec4(vec3(gl_FragColor) / (r * r), 1);
+    // gl_FragColor = vec4(vec3(gl_FragColor) / (r * r), 1);
 
     // normalize the light vector
     // N dot L
     vec3 L = normalize(lightVector);
     vec3 N = normalize(v_Normal);
-    
     float nDotL = max(dot(N, L), 0.0);
 
     // Reflection
     vec3 R = reflect(-L, N);
 
     // eye
-    vec3 E = normalize(u_cameraPos - vec3(v_vertPos));
+    vec3 E = normalize(u_cameraPos - vec3(v_VertPos));
 
     // Specular
     // float specular = pow(max(dot(E, R), 0.0), 10.0);
     float specular = pow(max(dot(E, R), 0.0), 64.0) * 0.8;
 
-    vec3 diffuse = vec3(gl_FragColor) * nDotL * 0.7;
-    vec3 ambient = vec3(gl_FragColor) * 0.3;
+    vec3 diffuse = vec3(1.0, 1.0, 0.9) * vec3(gl_FragColor) * nDotL * 0.7;
+    vec3 ambient = vec3(gl_FragColor) * 0.2;
     if (u_lightOn) {
-      gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
-    }
-    else {
-      gl_FragColor = vec4(diffuse + ambient, 1.0);
+      if (u_whichTexture == 0) {
+        gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+      }
+      else {
+        gl_FragColor = vec4(diffuse + ambient, 1.0);
+      }
     }
   }`
 
@@ -850,6 +848,7 @@ function renderDog() {
   // body.color = [1, 1, 0, 1];
   // body.textureNum = 0;
   // body.matrix.setTranslate(14, 0, 3);
+  if (g_normalOn) body.textureNum = -3;
   body.matrix.translate(-0.4, -0.3, 0.0); // use setTranslate instead of translate because translate assumes we start with an identity matrix
   body.matrix.rotate(0, 1, 0, 0);
   body.matrix.scale(1, 0.5, 0.5);
@@ -864,6 +863,7 @@ function renderDog() {
   var neck = new Cube();
   // neck.matrix.setTranslate(14, 0, 3);
   // neck.color = [1, 1, 0, 1];
+  if (g_normalOn) neck.textureNum = -3;
   neck.matrix.translate(-0.5, 0, 0.1);
   neck.matrix.rotate(-45, 0, 0, 1);
   neck.matrix.rotate(g_neckAngle, 0, 0, 1);
@@ -874,6 +874,7 @@ function renderDog() {
 
   // head
   var head = new Cube();
+  if (g_normalOn) head.textureNum = -3;
   // head.color = [1, 0, 1, 1];
   head.matrix = neckCoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   head.matrix.rotate(45, 0, 0, 1);
@@ -887,6 +888,7 @@ function renderDog() {
 
   // ear1
   var ear1 = new Pyramid();
+  if (g_normalOn) ear1.textureNum = -3;
   ear1.color = [0.5, 0.3, 0.2, 1];
   ear1.matrix.set(headCoordinatesMat); // use IDENTITY MATRIX to apply translations and rotations but NOT scaling // fixes the problem with the weird cube next to the pyramid
   ear1.matrix.translate(0.1, 0.25, 0.15);
@@ -899,6 +901,7 @@ function renderDog() {
 
    // ear2
   var ear2 = new Pyramid();
+  if (g_normalOn) ear2.textureNum = -3;
   ear2.color = [0.5, 0.3, 0.2, 1];
   ear2.matrix.set(headCoordinatesMat); // use IDENTITY MATRIX to apply translations and rotations but NOT scaling // fixes the problem with the weird cube next to the pyramid
   ear2.matrix.translate(0.1, 0.25, 0.3);
@@ -911,6 +914,7 @@ function renderDog() {
 
   // snout
   var snout = new Cube();
+  if (g_normalOn) snout.textureNum = -3;
   snout.color = [0.5, 0.3, 0.2, 1];
   snout.matrix = headCoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   snout.matrix.translate(-0.12, 0, 0);
@@ -925,6 +929,7 @@ function renderDog() {
   // want a function that lets us update the state of the angles but does not immediately flash back to the last thing on the slider
   // frontThigh1
   var frontThigh1 = new Cube();
+  if (g_normalOn) frontThigh1.textureNum = -3;
   // frontThigh1.matrix.setTranslate(14, 0, 3);
   // frontThigh1.color = [1, 1, 0, 1];
   frontThigh1.matrix.translate(-0.2, 0, 0.01);
@@ -937,6 +942,7 @@ function renderDog() {
 
   // frontCalf1
   var frontCalf1 = new Cube();
+  if (g_normalOn) frontCalf1.textureNum = -3;
   // frontCalf1.color = [1, 0, 1, 1];
   frontCalf1.matrix = frontThigh1CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   frontCalf1.matrix.translate(0, -0.45, 0);
@@ -948,6 +954,7 @@ function renderDog() {
 
   // frontFoot1
   var frontFoot1 = new Cube();
+  if (g_normalOn) frontFoot1.textureNum = -3;
   frontFoot1.color = [0.5, 0.3, 0.2, 1];
   frontFoot1.matrix = frontCalf1CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   frontFoot1.matrix.translate(-0.07, -0.32, 0);
@@ -961,6 +968,7 @@ function renderDog() {
 
   // frontThigh2
   var frontThigh2 = new Cube();
+  if (g_normalOn) frontThigh2.textureNum = -3;
   // frontThigh2.matrix.setTranslate(14, 0, 3);
   // frontThigh2.color = [1, 1, 0, 1];
   frontThigh2.matrix.translate(-0.2, 0, 0.27);
@@ -973,6 +981,7 @@ function renderDog() {
 
   // frontCalf2
   var frontCalf2 = new Cube();
+  if (g_normalOn) frontCalf2.textureNum = -3;
   // frontCalf2.color = [1, 0, 1, 1];
   frontCalf2.matrix = frontThigh2CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   frontCalf2.matrix.translate(0, -0.45, 0);
@@ -984,6 +993,7 @@ function renderDog() {
 
   // frontFoot2
   var frontFoot2 = new Cube();
+  if (g_normalOn) frontFoot2.textureNum = -3;
   frontFoot2.color = [0.5, 0.3, 0.2, 1];
   frontFoot2.matrix = frontCalf2CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   frontFoot2.matrix.translate(-0.07, -0.32, 0);
@@ -997,6 +1007,7 @@ function renderDog() {
 
   // backThigh1
   var backThigh1 = new Cube();
+  if (g_normalOn) backThigh1.textureNum = -3;
   // backThigh1.matrix.setTranslate(14, 0, 3);
   // backThigh1.color = [1, 1, 0, 1];
   backThigh1.matrix.translate(0.4, 0, 0.0);
@@ -1009,6 +1020,7 @@ function renderDog() {
 
   // backCalf1
   var backCalf1 = new Cube();
+  if (g_normalOn) backCalf1.textureNum = -3;
   // backCalf1.color = [1, 0, 1, 1];
   backCalf1.matrix = backThigh1CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   backCalf1.matrix.translate(0, -0.45, 0);
@@ -1020,6 +1032,7 @@ function renderDog() {
 
   // backFoot1
   var backFoot1 = new Cube();
+  if (g_normalOn) backFoot1.textureNum = -3;
   backFoot1.color = [0.5, 0.3, 0.2, 1];
   backFoot1.matrix = backCalf1CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   backFoot1.matrix.translate(-0.07, -0.32, 0);
@@ -1033,6 +1046,7 @@ function renderDog() {
 
   // backThigh2
   var backThigh2 = new Cube();
+  if (g_normalOn) backThigh2.textureNum = -3;
   // backThigh2.matrix.setTranslate(14, 0, 3);
   // backThigh2.color = [1, 1, 0, 1];
   backThigh2.matrix.translate(0.4, 0, 0.27);
@@ -1045,6 +1059,7 @@ function renderDog() {
 
   // backCalf2
   var backCalf2 = new Cube();
+  if (g_normalOn) backCalf2.textureNum = -3;
   // backCalf2.color = [1, 0, 1, 1];
   backCalf2.matrix = backThigh2CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   backCalf2.matrix.translate(0, -0.45, 0);
@@ -1056,6 +1071,7 @@ function renderDog() {
 
   // backFoot2
   var backFoot2 = new Cube();
+  if (g_normalOn) backFoot2.textureNum = -3;
   backFoot2.color = [0.5, 0.3, 0.2, 1];
   backFoot2.matrix = backCalf2CoordinatesMat; // use leftArm coordinate system as the starting coordinate system for this cube
   backFoot2.matrix.translate(-0.07, -0.32, 0);
@@ -1069,6 +1085,7 @@ function renderDog() {
 
   // tail1
   var tail1 = new Cube();
+  if (g_normalOn) tail1.textureNum = -3;
   // tail1.matrix.setTranslate(14, 0, 3);
   // tail1.color = [1, 0.5, 0.5, 1];
   tail1.matrix.translate(0.53, 0.1, 0.3);
@@ -1171,6 +1188,7 @@ function renderScene() {
   sphere.color = [1, 0, 0, 1];
   sphere.textureNum = 2;
   if (g_normalOn) sphere.textureNum = -3;
+  sphere.matrix.scale(0.5, 0.5, 0.5);
   sphere.matrix.translate(-0.5, 0.25, -0.5);
   sphere.render();
 

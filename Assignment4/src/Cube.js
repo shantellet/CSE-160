@@ -71,6 +71,9 @@ class Cube {
       // Pass the matrix to u_ModelMatrix attribute before drawing the cube
       gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
 
+      gl.uniformMatrix4fv(u_NormalMatrix, false, this.normalMatrix.elements);
+
+
       // Front of cube
       // drawTriangle3D( [0, 0, 0,  1, 1, 0,  1, 0, 0] );
       // vertex pos 1         2        3      1       2       3 uv coords for each vertices 

@@ -42,6 +42,14 @@ var FSHADER_SOURCE = `
   varying vec4 v_VertPos;
   uniform bool u_lightOn;
   uniform vec3 u_lightColor;
+
+  uniform bool u_spotlightOn;
+  uniform vec3 u_spotlightPosition;
+  uniform vec4 u_spotlightColor;
+  uniform vec3 u_spotlightDirection;
+  uniform float u_spotlightCutoff;
+  uniform float u_spotlightExponent;
+  
   void main() {
     if (u_whichTexture == -3) {
       gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0); // set the object to set the color to whatever the normal is
@@ -106,6 +114,21 @@ var FSHADER_SOURCE = `
         gl_FragColor = vec4(diffuse + ambient, 1.0);
       }
     }
+
+    // spotlight
+    if (u_spotlightOn) {
+      vec3 spotlightDirection = normalize(u_spotlightPosition - vec3(v_VertPos));
+      float theta = dot(spotlightDirection, -normalize(u_spotlightDirection));
+
+      if (theta > u_spotlightCutoff) {
+        float spotlightFactor = pow(theta, u_spotlightExponent);
+        vec3 spotlightEffect = spotlightFactor * vec3(u_spotlightColor);
+
+        float nDotLSpotlight = max(dot(v_Normal, spotlightDirection), 0.0);
+        vec3 spotlightDiffuse = nDotLSpotlight * spotlightEffect;
+        gl_FragColor += vec4(spotlightDiffuse, 0.0);
+      }
+    }
   }`
 
 
@@ -121,6 +144,14 @@ let u_lightPos;
 let u_cameraPos;
 let u_lightOn;
 let u_lightColor;
+
+let u_spotlightOn;
+let u_spotlightPosition;
+let u_spotlightColor;
+let u_spotlightDirection;
+let u_spotlightCutoff;
+let u_spotlightExponent;
+
 let u_FragColor;
 let u_ModelMatrix;
 let u_NormalMatrix;
@@ -200,6 +231,48 @@ function connectVariablesToGLSL() {
   u_lightColor = gl.getUniformLocation(gl.program, 'u_lightColor');
   if (!u_lightColor) {
     console.log('Failed to get the storage location of u_lightColor');
+    return;
+  }
+
+  // Get the storage location of u_spotlightOn
+  u_spotlightOn = gl.getUniformLocation(gl.program, 'u_spotlightOn');
+  if (!u_spotlightOn) {
+    console.log('Failed to get the storage location of u_spotlightOn');
+    return;
+  }
+
+  // Get the storage location of u_spotlightPosition
+  u_spotlightPosition = gl.getUniformLocation(gl.program, 'u_spotlightPosition');
+  if (!u_spotlightPosition) {
+    console.log('Failed to get the storage location of u_spotlightPosition');
+    return;
+  }
+  
+  // Get the storage location of u_spotlightColor
+  u_spotlightColor = gl.getUniformLocation(gl.program, 'u_spotlightColor');
+  if (!u_spotlightColor) {
+    console.log('Failed to get the storage location of u_spotlightColor');
+    return;
+  }
+
+  // Get the storage location of u_spotlightDirection
+  u_spotlightDirection = gl.getUniformLocation(gl.program, 'u_spotlightDirection');
+  if (!u_spotlightDirection) {
+    console.log('Failed to get the storage location of u_spotlightDirection');
+    return;
+  }
+
+  // Get the storage location of u_spotlightCutoff
+  u_spotlightCutoff = gl.getUniformLocation(gl.program, 'u_spotlightCutoff');
+  if (!u_spotlightCutoff) {
+    console.log('Failed to get the storage location of u_spotlightCutoff');
+    return;
+  }
+
+  // Get the storage location of u_spotlightExponent
+  u_spotlightExponent = gl.getUniformLocation(gl.program, 'u_spotlightExponent');
+  if (!u_spotlightExponent) {
+    console.log('Failed to get the storage location of u_spotlightExponent');
     return;
   }
 
@@ -306,10 +379,20 @@ let g_backLeg1Animation = false;
 let g_backLeg2Animation = false;
 let g_animation = true;
 let shift = false;
+
 let g_normalOn = false;
 let g_lightPos = [0, 1, 1];
 let g_lightOn = true;
 let g_lightColor = new Vector3([1, 1, 1]);
+
+let g_spotlightOn = false;
+let g_spotlight = [
+  [0.0, 1.0, 0.0], // position
+  [1.0, 1.0, 1.0, 1.0], // color
+  [0.0, -1.0, 0.0], // direction
+  Math.cos(Math.PI / 5), // cutoff
+  3.0 // exponent
+];
 
 let camera;
 
@@ -320,6 +403,9 @@ function addActionsForHtmlUI() {
 
   document.getElementById('lightOn').onclick = function() { g_lightOn = true; };
   document.getElementById('lightOff').onclick = function() { g_lightOn = false; };
+  
+  document.getElementById('spotlightOn').onclick = function() { g_spotlightOn = true; };
+  document.getElementById('spotlightOff').onclick = function() { g_spotlightOn = false; };
   
   document.getElementById('animationOffButton').onclick = function() { g_animation = false; };
   document.getElementById('animationOnButton').onclick = function() { g_animation = true; };
@@ -415,8 +501,6 @@ function sendTextureToTEXTURE0(image) {
 
   // Set the texture unit 0 to the sampler
   gl.uniform1i(u_Sampler0, 0);
-
-  gl.uniform3f(u_lightColor, g_lightColor.elements[0], g_lightColor.elements[1], g_lightColor.elements[2]);
 
   // gl.clear(gl.COLOR_BUFFER_BIT); // Clear <canvas>
 
@@ -1187,8 +1271,19 @@ function renderScene() {
   // Pass the camera position to GLSL
   gl.uniform3f(u_cameraPos, camera.eye.x, camera.eye.y, camera.eye.z);
 
-  // Pass the light status
+  // Pass the light status to GLSL
   gl.uniform1i(u_lightOn, g_lightOn);
+  
+  // Pass the light color to GLSL
+  gl.uniform3f(u_lightColor, g_lightColor.elements[0], g_lightColor.elements[1], g_lightColor.elements[2]);
+
+  // Pass the spotlight info to GLSL
+  gl.uniform1i(u_spotlightOn, g_spotlightOn);
+  gl.uniform3f(u_spotlightPosition, ...g_spotlight[0]);
+  gl.uniform4f(u_spotlightColor, ...g_spotlight[1]);
+  gl.uniform3f(u_spotlightDirection, ...g_spotlight[2]);
+  gl.uniform1f(u_spotlightCutoff, g_spotlight[3]);
+  gl.uniform1f(u_spotlightExponent, g_spotlight[4]);
 
   // drawMap();
   // drawkibbleMap();

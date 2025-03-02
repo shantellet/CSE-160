@@ -21,18 +21,21 @@ function main() {
   const cubes = []; // just an array we can use to rotate the cubes
   const loader = new THREE.TextureLoader();
 
-  const texture = loader.load( 'resources/images/wall.jpg' );
-  texture.colorSpace = THREE.SRGBColorSpace;
-
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-  });
+  const materials = [
+    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-1.jpg')}),
+    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-2.jpg')}),
+    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-3.jpg')}),
+    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-4.jpg')}),
+    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-5.jpg')}),
+    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-6.jpg')}),
+  ];
 
   // We then create a Mesh. A Mesh in three.js represents the combination of three things
     // A Geometry (the shape of the object)
     // A Material (how to draw the object, shiny or flat, what color, what texture(s) to apply. Etc.)
     // The position, orientation, and scale of that object in the scene relative to its parent. In the code below that parent is the scene.
-  const cube = new THREE.Mesh(geometry, material);
+  const cube = new THREE.Mesh(geometry, materials);
+
   scene.add(cube); // And finally we add that mesh to the scene
    
   cubes.push(cube); // add to our list of cubes to rotate
@@ -53,6 +56,12 @@ function main() {
 
   }
 
+  function loadColorTexture( path ) {
+    const texture = loader.load( path );
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+  
   // Let's animate it spinning and hopefully that will make it clear it's being drawn in 3D. To animate it we'll render inside a render loop using requestAnimationFrame
   function render(time) {
     time *= 0.001;  // convert time to seconds

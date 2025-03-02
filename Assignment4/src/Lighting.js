@@ -658,12 +658,12 @@ function keydown(ev) {
     camera.panLeft();
   } else if (ev.keyCode == 69) { // e
     camera.panRight();
-  } else if (ev.keyCode == 82) { // r
-    console.log("add block function called");
-    addBlock();
-  } else if (ev.keyCode == 70) { // f
-    console.log("delete block function called");
-    deleteBlock();
+  // } else if (ev.keyCode == 82) { // r
+  //   console.log("add block function called");
+  //   addBlock();
+  // } else if (ev.keyCode == 70) { // f
+  //   console.log("delete block function called");
+  //   deleteBlock();
   } else if (ev.keyCode == 32) { // spacebar
     ev.preventDefault(); // prevent scrolling page when press spacebar
     isFastMode = !isFastMode;
@@ -847,7 +847,7 @@ function click(ev) {
 //             // wall.matrix.translate(0, -0.75, 0);
 //             // wall.matrix.scale(0.4, 0.4, 0.4);
 //             wall.matrix.translate(x - 16, i - 0.75, y - 16); // move wall to right place
-//             // wall.render();
+//             // wall.render3DUVNormalFast();
 //             wall.renderfaster();
 //           }
 //         }
@@ -868,7 +868,7 @@ function click(ev) {
 //           // kibble.matrix.translate(0, -0.75, 0);
 //           // kibble.matrix.scale(0.4, 0.4, 0.4);
 //           kibble.matrix.translate(x - 16, i - 0.75, y - 16); // move kibble to right place
-//           // kibble.render();
+//           // kibble.render3DUVNormalFast();
 //           kibble.matrix.scale(0.3, 0.2, 0.3)
 //           kibble.renderfaster();
 //         }
@@ -957,7 +957,7 @@ function renderDog() {
   
   body.normalMatrix.setInverseOf(body.matrix).transpose();
 
-  body.render();
+  body.render3DUVNormalFast();
 
   // neck
   var neck = new Cube();
@@ -972,7 +972,7 @@ function renderDog() {
   neck.matrix.scale(0.3, 0.3, 0.3);
   neck.matrix.translate(-0.5, 0, 0);
   neck.normalMatrix.setInverseOf(neck.matrix).transpose();
-  neck.render();
+  neck.render3DUVNormalFast();
 
   // head
   var head = new Cube();
@@ -987,35 +987,35 @@ function renderDog() {
   head.matrix.translate(0, 0, -0.0001);
   // head.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   head.normalMatrix.setInverseOf(head.matrix).transpose();
-  head.render();
+  head.render3DUVNormalFast();
 
   // ear1
-  var ear1 = new Pyramid();
+  var ear1 = new Cube();
   if (g_normalOn) ear1.textureNum = -3;
   ear1.color = [0.5, 0.3, 0.2, 1];
   ear1.matrix.set(headCoordinatesMat); // use IDENTITY MATRIX to apply translations and rotations but NOT scaling // fixes the problem with the weird cube next to the pyramid
   ear1.matrix.translate(0.1, 0.25, 0.15);
   ear1.matrix.rotate(g_earAngle, 0, 0, 1);
-  ear1.matrix.rotate(-90, 1, 0, 0);
+  // ear1.matrix.rotate(-90, 1, 0, 0);
   // ear1.matrix.rotate(-30+g_leg1Angle, 0, 0, 1);
   ear1.matrix.scale(0.15, 0.15, 0.3);
   ear1.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   // ear1.normalMatrix.setInverseOf(ear1.matrix).transpose();
-  ear1.render();
+  ear1.render3DUVNormalFast();
 
    // ear2
-  var ear2 = new Pyramid();
+  var ear2 = new Cube();
   if (g_normalOn) ear2.textureNum = -3;
   ear2.color = [0.5, 0.3, 0.2, 1];
   ear2.matrix.set(headCoordinatesMat); // use IDENTITY MATRIX to apply translations and rotations but NOT scaling // fixes the problem with the weird cube next to the pyramid
-  ear2.matrix.translate(0.1, 0.25, 0.3);
+  ear2.matrix.translate(0.1, 0.25, -0.15);
   ear2.matrix.rotate(g_earAngle, 0, 0, 1);
-  ear2.matrix.rotate(-90, 1, 0, 0);
+  // ear2.matrix.rotate(-90, 1, 0, 0);
   // ear2.matrix.rotate(-30+g_leg1Angle, 0, 0, 1);
   ear2.matrix.scale(0.15, 0.15, 0.3);
   ear2.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   // ear2.normalMatrix.setInverseOf(ear2.matrix).transpose();
-  ear2.render();
+  ear2.render3DUVNormalFast();
 
   // snout
   var snout = new Cube();
@@ -1028,7 +1028,7 @@ function renderDog() {
   snout.matrix.scale(0.2, 0.16, 0.3);
   snout.matrix.translate(-0.4, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   // snout.normalMatrix.setInverseOf(snout.matrix).transpose();
-  snout.render();
+  snout.render3DUVNormalFast();
 
 
 
@@ -1046,7 +1046,7 @@ function renderDog() {
   frontThigh1.matrix.scale(0.08, -0.5, 0.22);
   frontThigh1.matrix.translate(-0.5, 0, 0);
   frontThigh1.normalMatrix.setInverseOf(frontThigh1.matrix).transpose();
-  frontThigh1.render();
+  frontThigh1.render3DUVNormalFast();
 
   // frontCalf1
   var frontCalf1 = new Cube();
@@ -1059,7 +1059,7 @@ function renderDog() {
   frontCalf1.matrix.scale(0.08, -0.3, 0.22);
   frontCalf1.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   frontCalf1.normalMatrix.setInverseOf(frontCalf1.matrix).transpose();
-  frontCalf1.render();
+  frontCalf1.render3DUVNormalFast();
 
   // frontFoot1
   var frontFoot1 = new Cube();
@@ -1072,7 +1072,7 @@ function renderDog() {
   frontFoot1.matrix.scale(0.2, -0.1, 0.22);
   frontFoot1.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   frontFoot1.normalMatrix.setInverseOf(frontFoot1.matrix).transpose();
-  frontFoot1.render();
+  frontFoot1.render3DUVNormalFast();
   
 
 
@@ -1089,7 +1089,7 @@ function renderDog() {
   frontThigh2.matrix.scale(0.08, -0.5, 0.22);
   frontThigh2.matrix.translate(-0.5, 0, 0);
   frontThigh2.normalMatrix.setInverseOf(frontThigh2.matrix).transpose();
-  frontThigh2.render();
+  frontThigh2.render3DUVNormalFast();
 
   // frontCalf2
   var frontCalf2 = new Cube();
@@ -1102,7 +1102,7 @@ function renderDog() {
   frontCalf2.matrix.scale(0.08, -0.3, 0.22);
   frontCalf2.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   frontCalf2.normalMatrix.setInverseOf(frontCalf2.matrix).transpose();
-  frontCalf2.render();
+  frontCalf2.render3DUVNormalFast();
 
   // frontFoot2
   var frontFoot2 = new Cube();
@@ -1115,7 +1115,7 @@ function renderDog() {
   frontFoot2.matrix.scale(0.2, -0.1, 0.22);
   frontFoot2.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   frontFoot2.normalMatrix.setInverseOf(frontFoot2.matrix).transpose();
-  frontFoot2.render();
+  frontFoot2.render3DUVNormalFast();
 
 
 
@@ -1132,7 +1132,7 @@ function renderDog() {
   backThigh1.matrix.scale(0.08, -0.5, 0.22);
   backThigh1.matrix.translate(-0.5, 0, 0);
   backThigh1.normalMatrix.setInverseOf(backThigh1.matrix).transpose();
-  backThigh1.render();
+  backThigh1.render3DUVNormalFast();
 
   // backCalf1
   var backCalf1 = new Cube();
@@ -1145,7 +1145,7 @@ function renderDog() {
   backCalf1.matrix.scale(0.08, -0.3, 0.22);
   backCalf1.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   backCalf1.normalMatrix.setInverseOf(backCalf1.matrix).transpose();
-  backCalf1.render();
+  backCalf1.render3DUVNormalFast();
 
   // backFoot1
   var backFoot1 = new Cube();
@@ -1158,7 +1158,7 @@ function renderDog() {
   backFoot1.matrix.scale(0.2, -0.1, 0.22);
   backFoot1.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   backFoot1.normalMatrix.setInverseOf(backFoot1.matrix).transpose();
-  backFoot1.render();
+  backFoot1.render3DUVNormalFast();
 
 
 
@@ -1175,7 +1175,7 @@ function renderDog() {
   backThigh2.matrix.scale(0.08, -0.5, 0.22);
   backThigh2.matrix.translate(-0.5, 0, 0);
   backThigh2.normalMatrix.setInverseOf(backThigh2.matrix).transpose();
-  backThigh2.render();
+  backThigh2.render3DUVNormalFast();
 
   // backCalf2
   var backCalf2 = new Cube();
@@ -1188,7 +1188,7 @@ function renderDog() {
   backCalf2.matrix.scale(0.08, -0.3, 0.22);
   backCalf2.matrix.translate(-0.5, 0.0, -0.0001); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   backCalf2.normalMatrix.setInverseOf(backCalf2.matrix).transpose();
-  backCalf2.render();
+  backCalf2.render3DUVNormalFast();
 
   // backFoot2
   var backFoot2 = new Cube();
@@ -1201,7 +1201,7 @@ function renderDog() {
   backFoot2.matrix.scale(0.2, -0.1, 0.22);
   backFoot2.matrix.translate(-0.5, 0.0, -0.0002); // if the last thing is 0, it will cause "z-fighting" with the left arm (which means the part where both boxes overlap are at the exact same position (exact floating point) so it keeps on flashing between the two boxes). make it slightly different (the negative means move it forward) so that it's not exactly lined up with the other box
   backFoot2.normalMatrix.setInverseOf(backFoot2.matrix).transpose();
-  backFoot2.render();
+  backFoot2.render3DUVNormalFast();
 
 
 
@@ -1221,7 +1221,7 @@ function renderDog() {
   tail1.matrix.scale(0.1, -0.1, 0.6);
   tail1.matrix.translate(-0.5, 0, 0);
   tail1.normalMatrix.setInverseOf(tail1.matrix).transpose();
-  tail1.render();
+  tail1.render3DUVNormalFast();
 }
 
 // Draw every shape that is supposed to be in the canvas
@@ -1297,7 +1297,7 @@ function renderScene() {
   light.matrix.scale(-0.1, -0.1, -0.1); // then scale x by 10 and y by 0 to make it into a flat plane
   light.matrix.translate(-0.5, -0.5, -0.5); // box starts out betwen 0 and 1 so move to center first
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
-  light.render();
+  light.render3DUVNormalFast();
 
   // Draw the floor
   var floor = new Cube();
@@ -1308,7 +1308,7 @@ function renderScene() {
   floor.matrix.scale(5, 0, 5); // then scale x by 10 and y by 0 to make it into a flat plane
   floor.matrix.translate(-0.5, 0, -0.5); // box starts out betwen 0 and 1 so move to center first
   // remember these happen in reverse order because these are right multiplies. we started with identity matrix, right multiply a setTranslate, then right multiply a scale. so scale is happening first, then translate
-  floor.render();
+  floor.render3DUVNormalFast();
 
   // Draw the sky
   var sky = new Cube();
@@ -1317,7 +1317,7 @@ function renderScene() {
   if (g_normalOn) sky.textureNum = -3;
   sky.matrix.scale(-5,-5,-5); // make negative to flip the cube so the normal faces the right way (since we're looking at the inside of the cube instead of outside)
   sky.matrix.translate(-0.5, -0.5, -0.5);
-  sky.render();
+  sky.render3DUVNormalFast();
 
   // Draw a sphere
   var sphere = new Sphere();

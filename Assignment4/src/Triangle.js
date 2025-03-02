@@ -223,11 +223,13 @@ function drawTriangle3D(vertices) { // video didnt do this but i added gl as a p
 // }
 
 // function that draws a triangle at the position we want it to draw
-function drawTriangle3DUVNormal(vertices, uv, normals) { // video didnt do this but i added gl as a param otherwise it's not in scope
+function drawTriangle3DUVNormal(vertices, uvs, normals) { // video didnt do this but i added gl as a param otherwise it's not in scope
   //   var vertices = new Float32Array([ // declare vertices at this location. this is in JS on the cpu.
   //     // Float32Array tells JS we want it to be precisely floats with 32 bits bc that's the kind we want to pass to GLSL
   //     0, 0.5,   -0.5, -0.5,   0.5, -0.5
   //   ]);
+  
+
     var n = vertices.length / 3; // The number of vertices
   
     // Create a buffer object
@@ -263,7 +265,7 @@ function drawTriangle3DUVNormal(vertices, uv, normals) { // video didnt do this 
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
 
     // Write data into the buffer object
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uv), gl.DYNAMIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.DYNAMIC_DRAW); // data coming as JS array, so convert it to Float32Array before giving it to GLSL
   
     
     // Assign the buffer object to a_UV variable

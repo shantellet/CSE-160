@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
 
 function main() {
   const canvas = document.querySelector('#c');
@@ -19,38 +20,80 @@ function main() {
   const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth); // contains the data for a box. Almost anything we want to display in Three.js needs geometry which defines the vertices that make up our 3D object
   
   const cubes = []; // just an array we can use to rotate the cubes
+  const loader = new THREE.TextureLoader();
 
-  // To wait until all textures have loaded you can use a LoadingManager. Create one and pass it to the TextureLoader then set its onLoad property to a callback.
-  const loadManager = new THREE.LoadingManager();
-  const loader = new THREE.TextureLoader(loadManager);
+  const texture = loader.load( 'resources/images/wall.jpg' );
+  texture.colorSpace = THREE.SRGBColorSpace;
 
-  const materials = [
-    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-1.jpg')}),
-    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-2.jpg')}),
-    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-3.jpg')}),
-    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-4.jpg')}),
-    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-5.jpg')}),
-    new THREE.MeshBasicMaterial({map: loadColorTexture('resources/images/flower-6.jpg')}),
-  ];
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+  });
 
-  const loadingElem = document.querySelector('#loading');
-  const progressBarElem = loadingElem.querySelector('.progressbar');
+  // We then create a Mesh. A Mesh in three.js represents the combination of three things
+    // A Geometry (the shape of the object)
+    // A Material (how to draw the object, shiny or flat, what color, what texture(s) to apply. Etc.)
+    // The position, orientation, and scale of that object in the scene relative to its parent. In the code below that parent is the scene.
+  const cube = new THREE.Mesh(geometry, material);
+  scene.add(cube); // And finally we add that mesh to the scene
+   
+  cubes.push(cube); // add to our list of cubes to rotate
 
-  loadManager.onLoad = () => {
-    loadingElem.style.display = 'none';
-    // We then create a Mesh. A Mesh in three.js represents the combination of three things
-      // A Geometry (the shape of the object)
-      // A Material (how to draw the object, shiny or flat, what color, what texture(s) to apply. Etc.)
-      // The position, orientation, and scale of that object in the scene relative to its parent. In the code below that parent is the scene.
-    const cube = new THREE.Mesh(geometry, materials);
-    scene.add(cube); // And finally we add that mesh to the scene
-    cubes.push(cube); // add to our list of cubes to rotate
+  // We'll use a simple class to give lil-gui an object that it can manipulate in degrees but that will set a property in radians.
+  class DegRadHelper {
+    constructor(obj, prop) {
+      this.obj = obj;
+      this.prop = prop;
+    }
+    get value() {
+      return THREE.MathUtils.radToDeg(this.obj[this.prop]);
+    }
+    set value(v) {
+      this.obj[this.prop] = THREE.MathUtils.degToRad(v);
+    }
+  }
+
+  // We also need a class that will convert from a string like "123" into a number like 123 since three.js requires numbers for enum settings like wrapS and wrapT but lil-gui only uses strings for enums.
+  class StringToNumberHelper {
+    constructor(obj, prop) {
+      this.obj = obj;
+      this.prop = prop;
+    }
+    get value() {
+      return this.obj[this.prop];
+    }
+    set value(v) {
+      this.obj[this.prop] = parseFloat(v);
+    }
+  }
+
+  // Using those classes we can setup a simple GUI for the settings above
+  const wrapModes = {
+    'ClampToEdgeWrapping': THREE.ClampToEdgeWrapping,
+    'RepeatWrapping': THREE.RepeatWrapping,
+    'MirroredRepeatWrapping': THREE.MirroredRepeatWrapping,
   };
+   
+  function updateTexture() {
+    texture.needsUpdate = true;
+  }
+   
+  const gui = new GUI();
+  gui.add(new StringToNumberHelper(texture, 'wrapS'), 'value', wrapModes)
+    .name('texture.wrapS')
+    .onChange(updateTexture);
+  gui.add(new StringToNumberHelper(texture, 'wrapT'), 'value', wrapModes)
+    .name('texture.wrapT')
+    .onChange(updateTexture);
+  gui.add(texture.repeat, 'x', 0, 5, .01).name('texture.repeat.x');
+  gui.add(texture.repeat, 'y', 0, 5, .01).name('texture.repeat.y');
+  gui.add(texture.offset, 'x', -2, 2, .01).name('texture.offset.x');
+  gui.add(texture.offset, 'y', -2, 2, .01).name('texture.offset.y');
+  gui.add(texture.center, 'x', -.5, 1.5, .01).name('texture.center.x');
+  gui.add(texture.center, 'y', -.5, 1.5, .01).name('texture.center.y');
+  gui.add(new DegRadHelper(texture, 'rotation'), 'value', -360, 360)
+    .name('texture.rotation');
 
-  loadManager.onProgress = (urlOfLastItemLoaded, itemsLoaded, itemsTotal) => {
-    const progress = itemsLoaded / itemsTotal;
-    progressBarElem.style.transform = `scaleX(${progress})`;
-  };
+  // The last thing to note about the example is that if you change wrapS or wrapT on the texture you must also set texture.needsUpdate so three.js knows to apply those settings. The other settings are automatically applied.
   
   function resizeRendererToDisplaySize( renderer ) {
 
@@ -68,13 +111,6 @@ function main() {
 
   }
 
-  // Most of the code on this site uses the easiest method of loading textures. We create a TextureLoader and then call its load method. This returns a Texture object.
-  function loadColorTexture( path ) {
-    const texture = loader.load( path );
-    texture.colorSpace = THREE.SRGBColorSpace;
-    return texture;
-  }
-  
   // Let's animate it spinning and hopefully that will make it clear it's being drawn in 3D. To animate it we'll render inside a render loop using requestAnimationFrame
   function render(time) {
     time *= 0.001;  // convert time to seconds

@@ -422,9 +422,9 @@ function addActionsForHtmlUI() {
   document.getElementById('lightSlideY').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[1] = this.value / 100; renderScene(); }});
   document.getElementById('lightSlideZ').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightPos[2] = this.value / 100; renderScene(); }});
 
-  document.getElementById('redLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor[0] = this.value / 255; }});
-  document.getElementById('greenLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor[1] = this.value / 255; }});
-  document.getElementById('blueLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor[2] = this.value / 255; }});
+  document.getElementById('redLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor.elements[0] = this.value / 255; }});
+  document.getElementById('greenLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor.elements[1] = this.value / 255; }});
+  document.getElementById('blueLightSlide').addEventListener('mousemove', function(ev) { if (ev.buttons == 1) {g_lightColor.elements[2] = this.value / 255; }});
 
 
   document.getElementById('xAngleSlide').addEventListener('mousemove', function() { g_xGlobalAngle = parseInt(this.value); renderScene(); });

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; // OrbitControls let the user spin or orbit the camera around some point
 import {GUI} from 'three/addons/libs/lil-gui.module.min.js';
+import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
+import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 
 function main() {
   const canvas = document.querySelector('#c');
@@ -85,24 +87,24 @@ function main() {
   // scene.add(light);
 
   // HemisphereLight
-  // const skyColor = 0xB1E1FF;  // light blue
-  // const groundColor = 0xB97A20;  // brownish orange
-  // const intensity = 1;
-  // const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
-  // scene.add(light);
+  const skyColor = 0xB1E1FF;  // light blue
+  const groundColor = 0xB97A20;  // brownish orange
+  const hemisphereIntensity = 3;
+  const hemisphereLight = new THREE.HemisphereLight(skyColor, groundColor, hemisphereIntensity);
+  scene.add(hemisphereLight);
 
   // DirectionalLight -- used to represent the sun
-  // const color = 0xFFFFFF;
-  // const intensity = 1;
-  // const light = new THREE.DirectionalLight(color, intensity);
-  // light.position.set(0, 10, 0);
-  // light.target.position.set(-5, 0, 0);
-  // scene.add(light);
-  // scene.add(light.target); // Notice that we had to add the light and the light.target to the scene. A three.js DirectionalLight will shine in the direction of its target.
+  const dirColor = 0xFFFFFF;
+  const dirIntensity = 3;
+  const dirLight = new THREE.DirectionalLight(dirColor, dirIntensity);
+  dirLight.position.set(0, 10, 0);
+  dirLight.target.position.set(-5, 0, 0);
+  scene.add(dirLight);
+  scene.add(dirLight.target); // Notice that we had to add the light and the light.target to the scene. A three.js DirectionalLight will shine in the direction of its target.
   
   // In this case we'll use the DirectionalLightHelper which will draw a plane, to represent the light, and a line from the light to the target. We just pass it the light and add it to the scene.
-  // const helper = new THREE.DirectionalLightHelper(light);
-  // scene.add(helper);
+  const helper = new THREE.DirectionalLightHelper(dirLight);
+  scene.add(helper);
 
   function updateLight() {
     light.target.updateMatrixWorld();
@@ -110,14 +112,14 @@ function main() {
   }
 
   // PointLight -- sits at a point and shoots light in all directions from that point
-  const color = 0xFFFFFF;
-  const intensity = 150;
-  const light = new THREE.PointLight(color, intensity);
-  light.position.set(0, 10, 0);
-  scene.add(light);
+  const pointColor = 0xFFFFFF;
+  const pointIntensity = 150;
+  const pointLight = new THREE.PointLight(pointColor, pointIntensity);
+  pointLight.position.set(0, 10, 0);
+  scene.add(pointLight);
 
-  const helper = new THREE.PointLightHelper(light);
-  scene.add(helper);
+  // const helper = new THREE.PointLightHelper(light);
+  // scene.add(helper);
   
   // While we're at it let's make it so we can set both the position of the light and the target. To do this we'll make a function that given a Vector3 will adjust its x, y, and z properties using lil-gui.
   function makeXYZGUI(gui, vector3, name, onChangeFn) {
@@ -136,23 +138,27 @@ function main() {
   // gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color'); // AmbientLight
 
   // HemisphereLight
-  // gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('skyColor');
-  // gui.addColor(new ColorGUIHelper(light, 'groundColor'), 'value').name('groundColor');
+  const hemisphereFolder = gui.addFolder("Hemisphere Light")
+  hemisphereFolder.addColor(new ColorGUIHelper(hemisphereLight, 'color'), 'value').name('skyColor');
+  hemisphereFolder.addColor(new ColorGUIHelper(hemisphereLight, 'groundColor'), 'value').name('groundColor');
+  hemisphereFolder.add(hemisphereLight, 'intensity', 0, 5, 0.01);
 
   // DirectionalLight
-  gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-  gui.add(light, 'intensity', 0, 5, 0.01);
-  // gui.add(light.target.position, 'x', -10, 10);
-  // gui.add(light.target.position, 'z', -10, 10);
-  // gui.add(light.target.position, 'y', 0, 10);
-  // makeXYZGUI(gui, light.position, 'position', updateLight);
-  // makeXYZGUI(gui, light.target.position, 'target', updateLight);
+  const directionalFolder = gui.addFolder("Directional Light");
+  directionalFolder.addColor(new ColorGUIHelper(dirLight, 'color'), 'value').name('color');
+  directionalFolder.add(dirLight, 'intensity', 0, 5, 0.01);
+  // gui.add(dirLight.target.position, 'x', -10, 10);
+  // gui.add(dirLight.target.position, 'z', -10, 10);
+  // gui.add(dirLight.target.position, 'y', 0, 10);
+  makeXYZGUI(directionalFolder, dirLight.position, 'position', updateLight);
+  makeXYZGUI(directionalFolder, dirLight.target.position, 'target', updateLight);
 
   // PointLight
-  gui.addColor(new ColorGUIHelper(light, 'color'), 'value').name('color');
-  gui.add(light, 'intensity', 0, 250, 1);
-  gui.add(light, 'distance', 0, 40).onChange(updateLight);
-  makeXYZGUI(gui, light.position, 'position', updateLight);
+  const pointFolder = gui.addFolder("Point Light");
+  pointFolder.addColor(new ColorGUIHelper(pointLight, 'color'), 'value').name('pointColor');
+  pointFolder.add(pointLight, 'intensity', 0, 250, 1);
+  pointFolder.add(pointLight, 'distance', 0, 40).onChange(updateLight);
+  makeXYZGUI(pointFolder, pointLight.position, 'position', updateLight);
   
   
   // const boxWidth = 1;
@@ -235,6 +241,26 @@ function main() {
   //   .name('texture.rotation');
 
   // // The last thing to note about the example is that if you change wrapS or wrapT on the texture you must also set texture.needsUpdate so three.js knows to apply those settings. The other settings are automatically applied.
+
+  
+  {
+
+		const mtlLoader = new MTLLoader();
+		mtlLoader.load( 'resources/models/Pagoda/Pagoda.mtl', ( mtl ) => {
+
+			mtl.preload();
+			const objLoader = new OBJLoader();
+			objLoader.setMaterials( mtl );
+			objLoader.load( 'resources/models/Pagoda/Pagoda.obj', ( root ) => {
+
+				scene.add( root );
+
+			} );
+
+		} );
+
+	}
+
   
   function resizeRendererToDisplaySize( renderer ) {
 

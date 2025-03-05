@@ -47,7 +47,7 @@ function main() {
   // First we load the texture, set it to repeating, set the filtering to nearest, and set how many times we want it to repeat. Since the texture is a 2x2 pixel checkerboard, by repeating and setting the repeat to half the size of the plane each check on the checkerboard will be exactly 1 unit large;
   const planeSize = 60;
 
-  const texture = loader.load('resources/images/15_paving flagstone texture-seamless.jpg');
+  const texture = loader.load('../lib/images/15_paving flagstone texture-seamless.jpg');
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.magFilter = THREE.NearestFilter;
@@ -239,7 +239,7 @@ function main() {
   const cubes = []; // just an array we can use to rotate the cubes
   // const loader1 = new THREE.TextureLoader();
 
-  const texture1 = loader.load( 'resources/images/light.jpg' );
+  const texture1 = loader.load( '../lib/images/light.jpg' );
   // texture.colorSpace = THREE.SRGBColorSpace;
 
   const material = new THREE.MeshBasicMaterial({
@@ -330,7 +330,7 @@ function main() {
   //////////////////////////////// 6. SKYBOX ////////////////////////////////
   const loader2 = new THREE.TextureLoader();
   const texture2 = loader2.load(
-    'resources/images/kloppenheim_06_puresky.jpg',
+    '../lib/images/kloppenheim_06_puresky.jpg',
     () => {
       texture2.mapping = THREE.EquirectangularReflectionMapping;
       texture2.colorSpace = THREE.SRGBColorSpace;
@@ -343,12 +343,12 @@ function main() {
   {
 
 		const mtlLoader = new MTLLoader();
-		mtlLoader.load( 'resources/models/Pagoda/Pagoda.mtl', ( mtl ) => {
+		mtlLoader.load( '../lib/models/Pagoda/Pagoda.mtl', ( mtl ) => {
 
 			mtl.preload();
 			const objLoader = new OBJLoader();
 			objLoader.setMaterials( mtl );
-			objLoader.load( 'resources/models/Pagoda/Pagoda.obj', ( root ) => {
+			objLoader.load( '../lib/models/Pagoda/Pagoda.obj', ( root ) => {
 
         root.scale.set(0.5, 0.5, 0.5);
         root.position.set(0, 0, -15);
@@ -370,7 +370,7 @@ function main() {
   const numFrames = 14;
 
   for (let i = 1; i <= numFrames; i++) {
-    const texture = textureLoader.load(`resources/images/fountain/${i}.png`);
+    const texture = textureLoader.load(`../lib/images/fountain/${i}.png`);
     fountainTextures.push(texture);
   }
 

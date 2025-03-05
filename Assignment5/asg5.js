@@ -36,11 +36,17 @@ function main() {
   scene.fog = new THREE.Fog(color, near1, far1);
 
 
+//////////////////////////////// LOADING ////////////////////////////////
+  const loadingElem = document.querySelector('#loading');
+  const progressBarElem = loadingElem.querySelector('.progressbar');
+  const loadManager = new THREE.LoadingManager();
+  const loader = new THREE.TextureLoader(loadManager);
+
 //////////////////////////////// 1. SIMPLE SCENE ////////////////////////////////
   // Next up let's make some things to light up. First we'll make ground plane. We'll apply a tiny 2x2 pixel checkerboard texture
   // First we load the texture, set it to repeating, set the filtering to nearest, and set how many times we want it to repeat. Since the texture is a 2x2 pixel checkerboard, by repeating and setting the repeat to half the size of the plane each check on the checkerboard will be exactly 1 unit large;
   const planeSize = 60;
-  const loader = new THREE.TextureLoader();
+
   const texture = loader.load('resources/images/15_paving flagstone texture-seamless.jpg');
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
@@ -55,9 +61,9 @@ function main() {
     map: texture,
     side: THREE.DoubleSide,
   });
-  const mesh = new THREE.Mesh(planeGeo, planeMat);
-  mesh.rotation.x = Math.PI * -.5;
-  scene.add(mesh);
+  // const mesh = new THREE.Mesh(planeGeo, planeMat);
+  // mesh.rotation.x = Math.PI * -.5;
+  // scene.add(mesh);
 
   // Let's add a cube and a sphere so we have 3 things to light including the plane
   // {
@@ -231,34 +237,16 @@ function main() {
   //////////////////////////////// 2. TEXTURE: LANTERN LIGHTS ON FENCE ////////////////////////////////
   // lantern from https://img.freepik.com/free-vector/geometric-groovy-pattern_23-2148850342.jpg?t=st=1741054053~exp=1741057653~hmac=33bd55756d654e28c9066b8c205b9ba33f98dc53981b1f463403a853a9efef5b&w=740
   const cubes = []; // just an array we can use to rotate the cubes
-  const loader1 = new THREE.TextureLoader();
+  // const loader1 = new THREE.TextureLoader();
 
-  const texture1 = loader1.load( 'resources/images/light.jpg' );
+  const texture1 = loader.load( 'resources/images/light.jpg' );
   // texture.colorSpace = THREE.SRGBColorSpace;
 
   const material = new THREE.MeshBasicMaterial({
     map: texture1,
   });
 
-  function makeLantern(x, z) {
-
-    const geometry = new THREE.BoxGeometry(0.6, 0.6, 0.6); // contains the data for a box. Almost anything we want to display in Three.js needs geometry which defines the vertices that make up our 3D object
-    
-    // We then create a Mesh. A Mesh in three.js represents the combination of three things
-      // A Geometry (the shape of the object)
-      // A Material (how to draw the object, shiny or flat, what color, what texture(s) to apply. Etc.)
-      // The position, orientation, and scale of that object in the scene relative to its parent. In the code below that parent is the scene.
-    const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(x, 3.6, z);
-    scene.add(cube); // And finally we add that mesh to the scene
-    
-    cubes.push(cube); // add to our list of cubes to rotate
-  }
-
-  for (let z = 0; z < 10; z++) {
-    makeLantern(4, z * 2 - 5);
-    makeLantern(-4, z * 2 - 5);
-  }
+  
 
 
   //////////////////////////////// 7 (MORE). FENCE POSTS ////////////////////////////////
@@ -415,7 +403,7 @@ function main() {
 
 
 
-  //////////////////////////////// 8. EXTRA: PICKING ////////////////////////////////
+//////////////////////////////// 8. EXTRA: PICKING ////////////////////////////////
   class PickHelper {
   
       constructor() {
@@ -464,6 +452,40 @@ function main() {
 	const pickHelper = new PickHelper();
 	clearPickPosition();
 
+
+
+//////////////////////////////// LOAD MANAGER ////////////////////////////////
+  loadManager.onLoad = () => {
+    loadingElem.style.display = 'none';
+    const mesh = new THREE.Mesh(planeGeo, planeMat);
+    mesh.rotation.x = Math.PI * -.5;
+    scene.add(mesh);
+
+    function makeLantern(x, z) {
+
+      const geometry = new THREE.BoxGeometry(0.6, 0.6, 0.6); // contains the data for a box. Almost anything we want to display in Three.js needs geometry which defines the vertices that make up our 3D object
+      
+      // We then create a Mesh. A Mesh in three.js represents the combination of three things
+        // A Geometry (the shape of the object)
+        // A Material (how to draw the object, shiny or flat, what color, what texture(s) to apply. Etc.)
+        // The position, orientation, and scale of that object in the scene relative to its parent. In the code below that parent is the scene.
+      const cube = new THREE.Mesh(geometry, material);
+      cube.position.set(x, 3.6, z);
+      scene.add(cube); // And finally we add that mesh to the scene
+      
+      cubes.push(cube); // add to our list of cubes to rotate
+    }
+
+    for (let z = 0; z < 10; z++) {
+      makeLantern(4, z * 2 - 5);
+      makeLantern(-4, z * 2 - 5);
+    }
+  };
+
+  loadManager.onProgress = (urlOfLastItemLoaded, itemsLoaded, itemsTotal) => {
+    const progress = itemsLoaded / itemsTotal;
+    progressBarElem.style.transform = `scaleX(${progress})`;
+  };
   
   function resizeRendererToDisplaySize( renderer ) {
 
